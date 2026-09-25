@@ -24,10 +24,17 @@ class UI {
     char ExportPathBuffer[256] = "output.png";
     std::string ExportStatus;
 
+    bool MouseInCanvas = false;
+    bool MouseDown = false;
+    bool MouseDragging = false;
+    int MousePixelX = 0;
+    int MousePixelY = 0;
+
 public:
     UI(const std::string& imagePath);
     ~UI();
 
+    void UpdateCanvasMouseInput();
     void DrawFrame();
 
     bool open() {return !ShouldClose;};

@@ -63,6 +63,7 @@ void UI::DrawFrame() {
         (ImTextureID)(intptr_t)MyCanvas->getTextureId(),
         ImVec2((float)MyCanvas->getWidth(), (float)MyCanvas->getHeight())
     );
+    UpdateCanvasMouseInput();
 
     ImGui::Separator();
     ImGui::InputText("Export path", ExportPathBuffer, sizeof(ExportPathBuffer));
@@ -78,6 +79,12 @@ void UI::DrawFrame() {
     if (!ExportStatus.empty())
         ImGui::TextUnformatted(ExportStatus.c_str());
 
+    ImGui::Separator();
+    if (MouseInCanvas)
+        ImGui::Text("Pixel: (%d, %d)  %s", MousePixelX, MousePixelY, MouseDragging ? "[drag]" : (MouseDown ? "[clic]" : ""));
+    else
+        ImGui::TextDisabled("Pixel: hors du canvas");
+
     ImGui::End();
 
     ImGui::Render();
@@ -90,6 +97,35 @@ void UI::DrawFrame() {
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
     glfwSwapBuffers(Window);
+}
+
+void UI::UpdateCanvasMouseInput() {
+    bool hovered = ImGui::IsItemHovered();
+    MouseInCanvas = hovered;
+
+    if (!hovered) {
+        MouseDown = false;
+        MouseDragging = false;
+        return;
+    }
+
+    ImVec2 imageOrigin = ImGui::GetItemRectMin();
+    ImVec2 mousePos = ImGui::GetMousePos();
+
+    float localX = mousePos.x - imageOrigin.x;
+    float localY = mousePos.y - imageOrigin.y;
+
+    if (localX < 0.0f) localX = 0.0f;
+    if (localY < 0.0f) localY = 0.0f;
+    if (localX >= (float)MyCanvas->getWidth())  localX = (float)MyCanvas->getWidth() - 1.0f;
+    if (localY >= (float)MyCanvas->getHeight()) localY = (float)MyCanvas->getHeight() - 1.0f;
+
+    MousePixelX = (int)localX;
+    MousePixelY = (int)localY;
+
+    bool leftDown = ImGui::IsMouseDown(ImGuiMouseButton_Left);
+    MouseDragging = leftDown && MouseDown;
+    MouseDown = leftDown;
 }
 
 }
