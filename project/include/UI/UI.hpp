@@ -2,6 +2,7 @@
     #define UI_HPP
 
     #include <memory>
+    #include <string>
 
     #include <glad/gl.h>
     #include <GLFW/glfw3.h>
@@ -11,15 +12,14 @@
     #include "imgui_impl_opengl3.h"
     #include "Error.hpp"
     #include "canvas.hpp"
-
-    #define GLFW_INCLUDE_NONE
+    #include "document.hpp"
 
 namespace gimp {
-
 class UI {
     GLFWwindow* Window = nullptr;
     bool ShouldClose = false;
     std::unique_ptr<Canvas> MyCanvas;
+    std::unique_ptr<Document> MyDocument;
 
     char ExportPathBuffer[256] = "output.png";
     std::string ExportStatus;
@@ -39,8 +39,8 @@ public:
     UI(const std::string& imagePath);
     ~UI();
 
-    void UpdateCanvasMouseInput();
     void DrawFrame();
+    void UpdateCanvasMouseInput();
 
     bool open() {return !ShouldClose;};
 };
