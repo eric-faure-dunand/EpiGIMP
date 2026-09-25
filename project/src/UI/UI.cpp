@@ -45,6 +45,14 @@ UI::~UI() {
     glfwTerminate();
 }
 
+uint8_t UI::NormalizeColor(int value) {
+    if (value < 0)
+        return 0;
+    if (value > 255)
+        return 255;
+    return static_cast<uint8_t>(value);
+}
+
 void UI::DrawFrame() {
     if (glfwWindowShouldClose(Window)) {
         ShouldClose = true;
@@ -57,13 +65,42 @@ void UI::DrawFrame() {
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
-    ImGui::Begin("Canvas");
+    ImGuiViewport* viewport = ImGui::GetMainViewport();
+    ImGui::SetNextWindowPos(viewport->WorkPos);
+    ImGui::SetNextWindowSize(viewport->WorkSize);
+
+    ImGuiWindowFlags flags = ImGuiWindowFlags_NoMove
+                            | ImGuiWindowFlags_NoResize
+                            | ImGuiWindowFlags_NoCollapse
+                            | ImGuiWindowFlags_NoTitleBar
+                            | ImGuiWindowFlags_NoBringToFrontOnFocus;
+
+    ImGui::Begin("Canvas", nullptr, flags);
 
     ImGui::Image(
         (ImTextureID)(intptr_t)MyCanvas->getTextureId(),
         ImVec2((float)MyCanvas->getWidth(), (float)MyCanvas->getHeight())
     );
     UpdateCanvasMouseInput();
+
+    if (MouseInCanvas && (MouseDown || MouseDragging)) {
+        uint8_t r = NormalizeColor(BrushColor[0]);
+        uint8_t g = NormalizeColor(BrushColor[1]);
+        uint8_t b = NormalizeColor(BrushColor[2]);
+        MyCanvas->DrawBrush(MousePixelX, MousePixelY, BrushSize, r, g, b, 255);
+    }
+
+    ImGui::Separator();
+    ImGui::SliderInt3("Couleur (RGB)", BrushColor, 0, 255, "%d", ImGuiSliderFlags_AlwaysClamp);
+    ImGui::SameLine();
+    ImVec4 previewColor(
+        BrushColor[0] / 255.0f,
+        BrushColor[1] / 255.0f,
+        BrushColor[2] / 255.0f,
+        1.0f
+    );
+    ImGui::ColorButton("Apercu couleur", previewColor, ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoDragDrop, ImVec2(24, 24));
+    ImGui::SliderInt("Taille pinceau", &BrushSize, 1, 50);
 
     ImGui::Separator();
     ImGui::InputText("Export path", ExportPathBuffer, sizeof(ExportPathBuffer));

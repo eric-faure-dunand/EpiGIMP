@@ -73,4 +73,33 @@ void Canvas::SaveToFile(const std::string& path) {
         throw Error("Echec de l'ecriture du fichier: " + path);
 }
 
+void Canvas::SetPixel(int x, int y, uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
+    if (x < 0 || y < 0 || x >= Width || y >= Height)
+        return;
+
+    size_t idx = (static_cast<size_t>(y) * Width + x) * 4;
+    Buffer[idx + 0] = r;
+    Buffer[idx + 1] = g;
+    Buffer[idx + 2] = b;
+    Buffer[idx + 3] = a;
+}
+
+void Canvas::DrawBrush(int centerX, int centerY, int radius, uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
+    if (radius < 1)
+        radius = 1;
+
+    int rSquared = radius * radius;
+
+    for (int y = centerY - radius; y <= centerY + radius; y++) {
+        for (int x = centerX - radius; x <= centerX + radius; x++) {
+            int dx = x - centerX;
+            int dy = y - centerY;
+            if (dx * dx + dy * dy <= rSquared)
+                SetPixel(x, y, r, g, b, a);
+        }
+    }
+
+    UpdateTexture();
+}
+
 }
