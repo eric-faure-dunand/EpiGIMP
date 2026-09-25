@@ -29,8 +29,11 @@ UI::UI(const std::string& imagePath) {
     ImGui_ImplGlfw_InitForOpenGL(Window, true);
     ImGui_ImplOpenGL3_Init("#version 330");
 
-    MyCanvas = std::make_unique<Canvas>(1, 1);
-    MyCanvas->LoadFromFile(imagePath);
+    MyDocument = std::make_unique<Document>(1, 1);
+    MyDocument->LoadBaseLayerFromFile(imagePath);
+
+    MyCanvas = std::make_unique<Canvas>(MyDocument->getWidth(), MyDocument->getHeight());
+    MyCanvas->UpdateTexture(MyDocument->Composite());
 }
 
 UI::~UI() {
@@ -87,18 +90,17 @@ void UI::DrawFrame() {
         uint8_t r = NormalizeColor(BrushColor[0]);
         uint8_t g = NormalizeColor(BrushColor[1]);
         uint8_t b = NormalizeColor(BrushColor[2]);
-        MyCanvas->DrawBrush(MousePixelX, MousePixelY, BrushSize, r, g, b, 255);
+
+        Layer* active = MyDocument->getActiveLayer();
+        if (active) {
+            active->DrawBrush(MousePixelX, MousePixelY, BrushSize, r, g, b, 255);
+            MyCanvas->UpdateTexture(MyDocument->Composite());
+        }
     }
 
-    ImGui::Separator();
     ImGui::SliderInt3("Couleur (RGB)", BrushColor, 0, 255, "%d", ImGuiSliderFlags_AlwaysClamp);
     ImGui::SameLine();
-    ImVec4 previewColor(
-        BrushColor[0] / 255.0f,
-        BrushColor[1] / 255.0f,
-        BrushColor[2] / 255.0f,
-        1.0f
-    );
+    ImVec4 previewColor(BrushColor[0] / 255.0f, BrushColor[1] / 255.0f, BrushColor[2] / 255.0f, 1.0f);
     ImGui::ColorButton("Apercu couleur", previewColor, ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoDragDrop, ImVec2(24, 24));
     ImGui::SliderInt("Taille pinceau", &BrushSize, 1, 50);
 
@@ -107,7 +109,7 @@ void UI::DrawFrame() {
     ImGui::SameLine();
     if (ImGui::Button("Export")) {
         try {
-            MyCanvas->SaveToFile(ExportPathBuffer);
+            MyDocument->SaveToFile(ExportPathBuffer);
             ExportStatus = "Exporte: " + std::string(ExportPathBuffer);
         } catch (const IError& e) {
             ExportStatus = std::string("Erreur: ") + e.what();
