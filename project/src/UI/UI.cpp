@@ -120,9 +120,11 @@ void UI::DrawFrame() {
                     uint8_t r = NormalizeColor(BrushColor[0]);
                     uint8_t g = NormalizeColor(BrushColor[1]);
                     uint8_t b = NormalizeColor(BrushColor[2]);
-                    active->DrawBrush(MousePixelX, MousePixelY, BrushSize, r, g, b, 255);
+                    active->DrawBrush(MousePixelX, MousePixelY, BrushSize, r, g, b, 255,
+                        HasSelection, SelectionMinX, SelectionMinY, SelectionMaxX, SelectionMaxY);
                 } else if (CurrentTool == ToolMode::Eraser) {
-                    active->DrawBrush(MousePixelX, MousePixelY, BrushSize, 0, 0, 0, 0);   // alpha = 0 -> transparent
+                    active->DrawBrush(MousePixelX, MousePixelY, BrushSize, 0, 0, 0, 0,
+                        HasSelection, SelectionMinX, SelectionMinY, SelectionMaxX, SelectionMaxY);
                 } else if (CurrentTool == ToolMode::Picker) {
                     std::vector<uint8_t> flat = MyDocument->Composite();
                     size_t idx = (static_cast<size_t>(MousePixelY) * MyDocument->getWidth() + MousePixelX) * 4;

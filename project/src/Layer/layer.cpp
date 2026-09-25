@@ -17,14 +17,21 @@ void Layer::SetPixel(int x, int y, uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
     Buffer[idx + 3] = a;
 }
 
-void Layer::DrawBrush(int centerX, int centerY, int radius, uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
+void Layer::DrawBrush(int centerX, int centerY, int radius, uint8_t r, uint8_t g, uint8_t b, uint8_t a,
+    bool hasClip, int clipMinX, int clipMinY, int clipMaxX, int clipMaxY) {
     if (radius < 1)
         radius = 1;
 
     int rSquared = radius * radius;
 
     for (int y = centerY - radius; y <= centerY + radius; y++) {
+        if (hasClip && (y < clipMinY || y > clipMaxY))
+            continue;
+
         for (int x = centerX - radius; x <= centerX + radius; x++) {
+            if (hasClip && (x < clipMinX || x > clipMaxX))
+                continue;
+
             int dx = x - centerX;
             int dy = y - centerY;
             if (dx * dx + dy * dy <= rSquared)
