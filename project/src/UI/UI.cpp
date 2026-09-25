@@ -2,7 +2,7 @@
 
 namespace gimp {
 
-UI::UI() {
+UI::UI(const std::string& imagePath) {
     if (!glfwInit())
         throw Error("Impossible d'initialiser GLFW");
 
@@ -29,7 +29,8 @@ UI::UI() {
     ImGui_ImplGlfw_InitForOpenGL(Window, true);
     ImGui_ImplOpenGL3_Init("#version 330");
 
-    MyCanvas = std::make_unique<Canvas>(800, 600);
+    MyCanvas = std::make_unique<Canvas>(1, 1);
+    MyCanvas->LoadFromFile(imagePath);
 }
 
 UI::~UI() {

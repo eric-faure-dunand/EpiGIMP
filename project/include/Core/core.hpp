@@ -10,7 +10,7 @@ class Core {
     std::unique_ptr<UI> Ui;
 
 public:
-    Core();
+    Core(const std::string& imagePath);
     ~Core() = default;
 
     void run();
