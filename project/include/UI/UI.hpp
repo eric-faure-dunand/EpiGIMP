@@ -22,7 +22,7 @@ class UI {
     std::unique_ptr<Canvas> MyCanvas;
 
 public:
-    UI();
+    UI(const std::string& imagePath);
     ~UI();
 
     void DrawFrame();

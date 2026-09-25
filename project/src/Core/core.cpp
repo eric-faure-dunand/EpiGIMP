@@ -2,8 +2,8 @@
 
 namespace gimp {
 
-Core::Core() {
-    Ui = std::make_unique<UI>();
+Core::Core(const std::string& imagePath) {
+    Ui = std::make_unique<UI>(imagePath);
 }
 
 void Core::run() {

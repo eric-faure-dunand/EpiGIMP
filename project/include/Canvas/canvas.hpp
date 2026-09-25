@@ -3,7 +3,10 @@
 
     #include <cstdint>
     #include <vector>
+    #include <string>
     #include <glad/gl.h>
+
+    #include "FileNotFound.hpp"
 
 namespace gimp {
 
@@ -18,6 +21,7 @@ public:
     ~Canvas();
 
     void UpdateTexture();
+    void LoadFromFile(const std::string& path);
 
     int getWidth() const {return Width;};
     int getHeight() const {return Height;};

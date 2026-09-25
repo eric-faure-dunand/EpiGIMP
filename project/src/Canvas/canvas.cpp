@@ -1,3 +1,6 @@
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+
 #include "canvas.hpp"
 
 namespace gimp {
@@ -23,6 +26,21 @@ Canvas::~Canvas() {
 void Canvas::UpdateTexture() {
     glBindTexture(GL_TEXTURE_2D, TextureId);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, Width, Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, Buffer.data());
+}
+
+void Canvas::LoadFromFile(const std::string& path) {
+    int w, h, channels;
+    unsigned char* data = stbi_load(path.c_str(), &w, &h, &channels, 4); // force 4 canaux (RGBA)
+
+    if (!data)
+        throw FileNotFound(path);
+
+    Width = w;
+    Height = h;
+    Buffer.assign(data, data + (static_cast<size_t>(w) * h * 4));
+    stbi_image_free(data);
+
+    UpdateTexture();
 }
 
 }
