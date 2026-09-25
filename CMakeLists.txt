@@ -46,6 +46,7 @@ target_include_directories(EpiGIMP
         project/include/Core
         project/include/Printer
         project/include/Canvas
+        project/include/Layer
         project/include/UI
 )
 

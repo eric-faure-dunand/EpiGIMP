@@ -10,6 +10,8 @@
 
     #include "FileNotFound.hpp"
     #include "Error.hpp"
+    #include "stb_image.h"
+    #include "stb_image_write.h"
 
 namespace gimp {
 
