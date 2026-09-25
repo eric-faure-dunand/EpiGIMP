@@ -106,19 +106,7 @@ void UI::DrawFrame() {
         }
     }
 
-    int toolIndex = (CurrentTool == ToolMode::Brush) ? 0 : 1;
-    if (ImGui::RadioButton("Pinceau", toolIndex == 0)) CurrentTool = ToolMode::Brush;
-    ImGui::SameLine();
-    if (ImGui::RadioButton("Gomme", toolIndex == 1)) CurrentTool = ToolMode::Eraser;
-    ImGui::SameLine();
-    if (ImGui::RadioButton("Pipette", toolIndex == 2)) CurrentTool = ToolMode::Picker;
-
-    ImGui::SliderInt3("Couleur (RGB)", BrushColor, 0, 255, "%d", ImGuiSliderFlags_AlwaysClamp);
-    ImGui::SameLine();
-    ImVec4 previewColor(BrushColor[0] / 255.0f, BrushColor[1] / 255.0f, BrushColor[2] / 255.0f, 1.0f);
-    ImGui::ColorButton("Apercu couleur", previewColor, ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoDragDrop, ImVec2(24, 24));
-    ImGui::SliderInt("Taille pinceau", &BrushSize, 1, 50);
-
+    DrawToolbar();
     DrawLayerPanel();
 
     ImGui::Separator();
@@ -210,6 +198,25 @@ void UI::DrawLayerPanel() {
 
         ImGui::PopID();
     }
+}
+
+void UI::DrawToolbar() {
+    ImGui::Separator();
+    ImGui::Text("Outils");
+
+    int toolIndex = (CurrentTool == ToolMode::Brush) ? 0 : (CurrentTool == ToolMode::Eraser) ? 1 : 2;
+    if (ImGui::RadioButton("Pinceau", toolIndex == 0)) CurrentTool = ToolMode::Brush;
+    ImGui::SameLine();
+    if (ImGui::RadioButton("Gomme", toolIndex == 1)) CurrentTool = ToolMode::Eraser;
+    ImGui::SameLine();
+    if (ImGui::RadioButton("Pipette", toolIndex == 2)) CurrentTool = ToolMode::Picker;
+
+    ImGui::SliderInt3("Couleur (RGB)", BrushColor, 0, 255, "%d", ImGuiSliderFlags_AlwaysClamp);
+    ImGui::SameLine();
+    ImVec4 previewColor(BrushColor[0] / 255.0f, BrushColor[1] / 255.0f, BrushColor[2] / 255.0f, 1.0f);
+    ImGui::ColorButton("Apercu couleur", previewColor, ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoDragDrop, ImVec2(24, 24));
+
+    ImGui::SliderInt("Taille pinceau", &BrushSize, 1, 50);
 }
 
 }
