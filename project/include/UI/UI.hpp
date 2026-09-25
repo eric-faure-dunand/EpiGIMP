@@ -19,7 +19,8 @@ namespace gimp {
 enum class ToolMode {
     Brush,
     Eraser,
-    Picker
+    Picker,
+    Selection
 };
 
 class UI {
@@ -51,6 +52,14 @@ class UI {
     int RedoLayerIndex = -1;
     std::vector<uint8_t> RedoBuffer;
     bool RedoAvailable = false;
+
+    bool HasSelection = false;
+    int SelectionStartX = 0;
+    int SelectionStartY = 0;
+    int SelectionMinX = 0;
+    int SelectionMinY = 0;
+    int SelectionMaxX = 0;
+    int SelectionMaxY = 0;
 
     uint8_t NormalizeColor(int value);
 
