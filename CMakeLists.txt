@@ -34,3 +34,32 @@ add_library(imgui STATIC
 )
 target_include_directories(imgui PUBLIC ${IMGUI_DIR} ${IMGUI_DIR}/backends)
 target_link_libraries(imgui PUBLIC glfw OpenGL::GL)
+
+file(GLOB_RECURSE PROJECT_SRCS ${CMAKE_SOURCE_DIR}/project/src/*.cpp)
+
+add_executable(EpiGIMP ${PROJECT_SRCS})
+
+target_include_directories(EpiGIMP
+    PRIVATE
+        project/include
+        project/include/Error
+        project/include/Core
+        project/include/Printer
+        project/include/UI
+)
+
+target_compile_options(EpiGIMP
+    PRIVATE
+        -Wall
+        -Wextra
+        -Werror
+        -std=c++20
+)
+
+target_link_libraries(EpiGIMP
+    PRIVATE
+        glfw
+        glad
+        imgui
+        OpenGL::GL
+)
