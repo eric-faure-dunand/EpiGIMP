@@ -80,7 +80,7 @@ void UI::DrawFrame() {
 
     ImGui::Begin("Canvas", nullptr, flags);
 
-    ImGui::Image(
+        ImGui::Image(
         (ImTextureID)(intptr_t)MyCanvas->getTextureId(),
         ImVec2((float)MyCanvas->getWidth(), (float)MyCanvas->getHeight())
     );
@@ -92,10 +92,8 @@ void UI::DrawFrame() {
         uint8_t b = NormalizeColor(BrushColor[2]);
 
         Layer* active = MyDocument->getActiveLayer();
-        if (active) {
+        if (active)
             active->DrawBrush(MousePixelX, MousePixelY, BrushSize, r, g, b, 255);
-            MyCanvas->UpdateTexture(MyDocument->Composite());
-        }
     }
 
     ImGui::SliderInt3("Couleur (RGB)", BrushColor, 0, 255, "%d", ImGuiSliderFlags_AlwaysClamp);
@@ -103,6 +101,8 @@ void UI::DrawFrame() {
     ImVec4 previewColor(BrushColor[0] / 255.0f, BrushColor[1] / 255.0f, BrushColor[2] / 255.0f, 1.0f);
     ImGui::ColorButton("Apercu couleur", previewColor, ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoDragDrop, ImVec2(24, 24));
     ImGui::SliderInt("Taille pinceau", &BrushSize, 1, 50);
+
+    DrawLayerPanel();
 
     ImGui::Separator();
     ImGui::InputText("Export path", ExportPathBuffer, sizeof(ExportPathBuffer));
@@ -118,11 +118,7 @@ void UI::DrawFrame() {
     if (!ExportStatus.empty())
         ImGui::TextUnformatted(ExportStatus.c_str());
 
-    ImGui::Separator();
-    if (MouseInCanvas)
-        ImGui::Text("Pixel: (%d, %d)  %s", MousePixelX, MousePixelY, MouseDragging ? "[drag]" : (MouseDown ? "[clic]" : ""));
-    else
-        ImGui::TextDisabled("Pixel: hors du canvas");
+    MyCanvas->UpdateTexture(MyDocument->Composite());
 
     ImGui::End();
 
@@ -165,6 +161,38 @@ void UI::UpdateCanvasMouseInput() {
     bool leftDown = ImGui::IsMouseDown(ImGuiMouseButton_Left);
     MouseDragging = leftDown && MouseDown;
     MouseDown = leftDown;
+}
+
+void UI::DrawLayerPanel() {
+    ImGui::Separator();
+    ImGui::Text("Calques");
+
+    if (ImGui::Button("+ Ajouter")) {
+        LayerCounter++;
+        MyDocument->AddLayer("Layer " + std::to_string(LayerCounter));
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("- Supprimer")) {
+        if (MyDocument->getLayerCount() > 1)
+            MyDocument->RemoveLayer(MyDocument->getActiveLayerIndex());
+    }
+
+    for (int i = MyDocument->getLayerCount() - 1; i >= 0; i--) {
+        Layer& layer = MyDocument->getLayer(i);
+        ImGui::PushID(i);
+
+        bool visible = layer.isVisible();
+        if (ImGui::Checkbox("##visible", &visible))
+            layer.setVisible(visible);
+
+        ImGui::SameLine();
+
+        bool isActive = (i == MyDocument->getActiveLayerIndex());
+        if (ImGui::Selectable(layer.getName().c_str(), isActive))
+            MyDocument->setActiveLayerIndex(i);
+
+        ImGui::PopID();
+    }
 }
 
 }
