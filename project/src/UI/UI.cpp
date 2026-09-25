@@ -84,30 +84,52 @@ void UI::DrawFrame() {
         (ImTextureID)(intptr_t)MyCanvas->getTextureId(),
         ImVec2((float)MyCanvas->getWidth(), (float)MyCanvas->getHeight())
     );
+
+    if (HasSelection) {
+        ImVec2 imageOrigin = ImGui::GetItemRectMin();
+        ImVec2 rectMin(imageOrigin.x + SelectionMinX, imageOrigin.y + SelectionMinY);
+        ImVec2 rectMax(imageOrigin.x + SelectionMaxX + 1, imageOrigin.y + SelectionMaxY + 1);
+        ImGui::GetWindowDrawList()->AddRect(rectMin, rectMax, IM_COL32(255, 255, 0, 255), 0.0f, 0, 2.0f);
+    }
+
     UpdateCanvasMouseInput();
 
     if (MouseInCanvas && (MouseDown || MouseDragging)) {
-        Layer* active = MyDocument->getActiveLayer();
-        if (active) {
-            if (StrokeStarted && CurrentTool != ToolMode::Picker) {
-                UndoLayerIndex = MyDocument->getActiveLayerIndex();
-                UndoBuffer = active->getBuffer();
-                UndoAvailable = true;
-                RedoAvailable = false;
+        if (CurrentTool == ToolMode::Selection) {
+            if (StrokeStarted) {
+                SelectionStartX = MousePixelX;
+                SelectionStartY = MousePixelY;
+                HasSelection = true;
             }
-            if (CurrentTool == ToolMode::Brush) {
-                uint8_t r = NormalizeColor(BrushColor[0]);
-                uint8_t g = NormalizeColor(BrushColor[1]);
-                uint8_t b = NormalizeColor(BrushColor[2]);
-                active->DrawBrush(MousePixelX, MousePixelY, BrushSize, r, g, b, 255);
-            } else if (CurrentTool == ToolMode::Eraser) {
-                active->DrawBrush(MousePixelX, MousePixelY, BrushSize, 0, 0, 0, 0);   // alpha = 0 -> transparent
-            } else if (CurrentTool == ToolMode::Picker) {
-                std::vector<uint8_t> flat = MyDocument->Composite();
-                size_t idx = (static_cast<size_t>(MousePixelY) * MyDocument->getWidth() + MousePixelX) * 4;
-                BrushColor[0] = flat[idx + 0];
-                BrushColor[1] = flat[idx + 1];
-                BrushColor[2] = flat[idx + 2];
+            if (HasSelection) {
+                SelectionMinX = std::min(SelectionStartX, MousePixelX);
+                SelectionMaxX = std::max(SelectionStartX, MousePixelX);
+                SelectionMinY = std::min(SelectionStartY, MousePixelY);
+                SelectionMaxY = std::max(SelectionStartY, MousePixelY);
+            }
+        } else {
+            Layer* active = MyDocument->getActiveLayer();
+            if (active) {
+                if (StrokeStarted && CurrentTool != ToolMode::Picker) {
+                    UndoLayerIndex = MyDocument->getActiveLayerIndex();
+                    UndoBuffer = active->getBuffer();
+                    UndoAvailable = true;
+                    RedoAvailable = false;
+                }
+                if (CurrentTool == ToolMode::Brush) {
+                    uint8_t r = NormalizeColor(BrushColor[0]);
+                    uint8_t g = NormalizeColor(BrushColor[1]);
+                    uint8_t b = NormalizeColor(BrushColor[2]);
+                    active->DrawBrush(MousePixelX, MousePixelY, BrushSize, r, g, b, 255);
+                } else if (CurrentTool == ToolMode::Eraser) {
+                    active->DrawBrush(MousePixelX, MousePixelY, BrushSize, 0, 0, 0, 0);   // alpha = 0 -> transparent
+                } else if (CurrentTool == ToolMode::Picker) {
+                    std::vector<uint8_t> flat = MyDocument->Composite();
+                    size_t idx = (static_cast<size_t>(MousePixelY) * MyDocument->getWidth() + MousePixelX) * 4;
+                    BrushColor[0] = flat[idx + 0];
+                    BrushColor[1] = flat[idx + 1];
+                    BrushColor[2] = flat[idx + 2];
+                }
             }
         }
     }
@@ -218,12 +240,20 @@ void UI::DrawToolbar() {
     ImGui::Separator();
     ImGui::Text("Outils");
 
-    int toolIndex = (CurrentTool == ToolMode::Brush) ? 0 : (CurrentTool == ToolMode::Eraser) ? 1 : 2;
+    int toolIndex = (CurrentTool == ToolMode::Brush) ? 0 : (CurrentTool == ToolMode::Eraser) ? 1 : (CurrentTool == ToolMode::Picker) ? 2 : 3;
     if (ImGui::RadioButton("Pinceau", toolIndex == 0)) CurrentTool = ToolMode::Brush;
     ImGui::SameLine();
     if (ImGui::RadioButton("Gomme", toolIndex == 1)) CurrentTool = ToolMode::Eraser;
     ImGui::SameLine();
     if (ImGui::RadioButton("Pipette", toolIndex == 2)) CurrentTool = ToolMode::Picker;
+    ImGui::SameLine();
+    if (ImGui::RadioButton("Selection", toolIndex == 3)) CurrentTool = ToolMode::Selection;
+
+    if (HasSelection) {
+        ImGui::SameLine();
+        if (ImGui::Button("Deselectionner"))
+            HasSelection = false;
+    }
 
     ImGui::SliderInt3("Couleur (RGB)", BrushColor, 0, 255, "%d", ImGuiSliderFlags_AlwaysClamp);
     ImGui::SameLine();
@@ -233,13 +263,11 @@ void UI::DrawToolbar() {
     ImGui::SliderInt("Taille pinceau", &BrushSize, 1, 50);
 
     ImGui::BeginDisabled(!UndoAvailable);
-    if (ImGui::Button("Undo (Ctrl+Z)"))
-        Undo();
+    if (ImGui::Button("Undo (Ctrl+Z)")) Undo();
     ImGui::EndDisabled();
     ImGui::SameLine();
     ImGui::BeginDisabled(!RedoAvailable);
-    if (ImGui::Button("Redo (Ctrl+Y)"))
-        Redo();
+    if (ImGui::Button("Redo (Ctrl+Y)")) Redo();
     ImGui::EndDisabled();
 }
 
