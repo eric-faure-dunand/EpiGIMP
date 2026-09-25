@@ -28,9 +28,13 @@ UI::UI() {
 
     ImGui_ImplGlfw_InitForOpenGL(Window, true);
     ImGui_ImplOpenGL3_Init("#version 330");
+
+    MyCanvas = std::make_unique<Canvas>(800, 600);
 }
 
 UI::~UI() {
+    MyCanvas.reset();
+
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
@@ -52,8 +56,12 @@ void UI::DrawFrame() {
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
-    ImGui::ShowDemoWindow();
-
+    ImGui::Begin("Canvas");
+    ImGui::Image(
+        (ImTextureID)(intptr_t)MyCanvas->getTextureId(),
+        ImVec2((float)MyCanvas->getWidth(), (float)MyCanvas->getHeight())
+    );
+    ImGui::End();
     ImGui::Render();
 
     int w, h;
