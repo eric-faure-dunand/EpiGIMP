@@ -33,6 +33,8 @@ class UI {
     int BrushColor[3] = {0, 0, 0};
     int BrushSize = 4;
 
+    int LayerCounter = 1;
+
     uint8_t NormalizeColor(int value);
 
 public:
@@ -41,6 +43,7 @@ public:
 
     void DrawFrame();
     void UpdateCanvasMouseInput();
+    void DrawLayerPanel();
 
     bool open() {return !ShouldClose;};
 };
