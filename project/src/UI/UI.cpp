@@ -96,6 +96,12 @@ void UI::DrawFrame() {
                 active->DrawBrush(MousePixelX, MousePixelY, BrushSize, r, g, b, 255);
             } else if (CurrentTool == ToolMode::Eraser) {
                 active->DrawBrush(MousePixelX, MousePixelY, BrushSize, 0, 0, 0, 0);   // alpha = 0 -> transparent
+            } else if (CurrentTool == ToolMode::Picker) {
+                std::vector<uint8_t> flat = MyDocument->Composite();
+                size_t idx = (static_cast<size_t>(MousePixelY) * MyDocument->getWidth() + MousePixelX) * 4;
+                BrushColor[0] = flat[idx + 0];
+                BrushColor[1] = flat[idx + 1];
+                BrushColor[2] = flat[idx + 2];
             }
         }
     }
@@ -104,6 +110,8 @@ void UI::DrawFrame() {
     if (ImGui::RadioButton("Pinceau", toolIndex == 0)) CurrentTool = ToolMode::Brush;
     ImGui::SameLine();
     if (ImGui::RadioButton("Gomme", toolIndex == 1)) CurrentTool = ToolMode::Eraser;
+    ImGui::SameLine();
+    if (ImGui::RadioButton("Pipette", toolIndex == 2)) CurrentTool = ToolMode::Picker;
 
     ImGui::SliderInt3("Couleur (RGB)", BrushColor, 0, 255, "%d", ImGuiSliderFlags_AlwaysClamp);
     ImGui::SameLine();

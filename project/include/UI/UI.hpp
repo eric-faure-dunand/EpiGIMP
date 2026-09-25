@@ -18,7 +18,8 @@ namespace gimp {
 
 enum class ToolMode {
     Brush,
-    Eraser
+    Eraser,
+    Picker
 };
 
 class UI {
