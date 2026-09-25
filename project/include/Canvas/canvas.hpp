@@ -5,8 +5,11 @@
     #include <vector>
     #include <string>
     #include <glad/gl.h>
+    #include <algorithm>
+    #include <cctype>
 
     #include "FileNotFound.hpp"
+    #include "Error.hpp"
 
 namespace gimp {
 
@@ -22,6 +25,7 @@ public:
 
     void UpdateTexture();
     void LoadFromFile(const std::string& path);
+    void SaveToFile(const std::string& path);
 
     int getWidth() const {return Width;};
     int getHeight() const {return Height;};

@@ -1,6 +1,9 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image_write.h"
+
 #include "canvas.hpp"
 
 namespace gimp {
@@ -30,7 +33,7 @@ void Canvas::UpdateTexture() {
 
 void Canvas::LoadFromFile(const std::string& path) {
     int w, h, channels;
-    unsigned char* data = stbi_load(path.c_str(), &w, &h, &channels, 4); // force 4 canaux (RGBA)
+    unsigned char* data = stbi_load(path.c_str(), &w, &h, &channels, 4);
 
     if (!data)
         throw FileNotFound(path);
@@ -41,6 +44,33 @@ void Canvas::LoadFromFile(const std::string& path) {
     stbi_image_free(data);
 
     UpdateTexture();
+}
+
+static std::string toLowerExt(const std::string& path) {
+    size_t dot = path.find_last_of('.');
+    if (dot == std::string::npos)
+        return "";
+    std::string ext = path.substr(dot + 1);
+    std::transform(ext.begin(), ext.end(), ext.begin(), [](unsigned char c) { return std::tolower(c); });
+    return ext;
+}
+
+void Canvas::SaveToFile(const std::string& path) {
+    std::string ext = toLowerExt(path);
+    int stride = Width * 4;
+    int ok = 0;
+
+    if (ext == "png")
+        ok = stbi_write_png(path.c_str(), Width, Height, 4, Buffer.data(), stride);
+    else if (ext == "bmp")
+        ok = stbi_write_bmp(path.c_str(), Width, Height, 4, Buffer.data());
+    else if (ext == "jpg" || ext == "jpeg")
+        ok = stbi_write_jpg(path.c_str(), Width, Height, 4, Buffer.data(), 90);
+    else
+        throw Error("Format d'export non supporte (extension attendue: .png, .bmp, .jpg): " + path);
+
+    if (!ok)
+        throw Error("Echec de l'ecriture du fichier: " + path);
 }
 
 }

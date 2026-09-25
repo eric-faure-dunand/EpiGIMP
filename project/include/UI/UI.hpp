@@ -21,6 +21,9 @@ class UI {
     bool ShouldClose = false;
     std::unique_ptr<Canvas> MyCanvas;
 
+    char ExportPathBuffer[256] = "output.png";
+    std::string ExportStatus;
+
 public:
     UI(const std::string& imagePath);
     ~UI();

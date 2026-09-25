@@ -58,11 +58,28 @@ void UI::DrawFrame() {
     ImGui::NewFrame();
 
     ImGui::Begin("Canvas");
+
     ImGui::Image(
         (ImTextureID)(intptr_t)MyCanvas->getTextureId(),
         ImVec2((float)MyCanvas->getWidth(), (float)MyCanvas->getHeight())
     );
+
+    ImGui::Separator();
+    ImGui::InputText("Export path", ExportPathBuffer, sizeof(ExportPathBuffer));
+    ImGui::SameLine();
+    if (ImGui::Button("Export")) {
+        try {
+            MyCanvas->SaveToFile(ExportPathBuffer);
+            ExportStatus = "Exporte: " + std::string(ExportPathBuffer);
+        } catch (const IError& e) {
+            ExportStatus = std::string("Erreur: ") + e.what();
+        }
+    }
+    if (!ExportStatus.empty())
+        ImGui::TextUnformatted(ExportStatus.c_str());
+
     ImGui::End();
+
     ImGui::Render();
 
     int w, h;

@@ -47,8 +47,9 @@ target_include_directories(EpiGIMP
         project/include/Printer
         project/include/Canvas
         project/include/UI
-        vendor/stb
 )
+
+target_include_directories(EpiGIMP SYSTEM PRIVATE vendor/stb)
 
 target_compile_options(EpiGIMP
     PRIVATE
