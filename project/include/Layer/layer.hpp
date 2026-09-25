@@ -31,6 +31,7 @@ public:
     const std::string& getName() const {return Name;};
     void setName(const std::string& name) {Name = name;};
     const std::vector<uint8_t>& getBuffer() const {return Buffer;};
+    void setBuffer(const std::vector<uint8_t>& buffer) {Buffer = buffer;};
 };
 
 }

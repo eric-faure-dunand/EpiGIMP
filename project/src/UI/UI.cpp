@@ -89,6 +89,12 @@ void UI::DrawFrame() {
     if (MouseInCanvas && (MouseDown || MouseDragging)) {
         Layer* active = MyDocument->getActiveLayer();
         if (active) {
+            if (StrokeStarted && CurrentTool != ToolMode::Picker) {
+                UndoLayerIndex = MyDocument->getActiveLayerIndex();
+                UndoBuffer = active->getBuffer();
+                UndoAvailable = true;
+                RedoAvailable = false;
+            }
             if (CurrentTool == ToolMode::Brush) {
                 uint8_t r = NormalizeColor(BrushColor[0]);
                 uint8_t g = NormalizeColor(BrushColor[1]);
@@ -105,6 +111,12 @@ void UI::DrawFrame() {
             }
         }
     }
+
+    ImGuiIO& io = ImGui::GetIO();
+    if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_Z, false))
+        Undo();
+    if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_Y, false))
+        Redo();
 
     DrawToolbar();
     DrawLayerPanel();
@@ -142,6 +154,7 @@ void UI::DrawFrame() {
 void UI::UpdateCanvasMouseInput() {
     bool hovered = ImGui::IsItemHovered();
     MouseInCanvas = hovered;
+    StrokeStarted = false;
 
     if (!hovered) {
         MouseDown = false;
@@ -164,6 +177,7 @@ void UI::UpdateCanvasMouseInput() {
     MousePixelY = (int)localY;
 
     bool leftDown = ImGui::IsMouseDown(ImGuiMouseButton_Left);
+    StrokeStarted = leftDown && !MouseDown;
     MouseDragging = leftDown && MouseDown;
     MouseDown = leftDown;
 }
@@ -217,6 +231,44 @@ void UI::DrawToolbar() {
     ImGui::ColorButton("Apercu couleur", previewColor, ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoDragDrop, ImVec2(24, 24));
 
     ImGui::SliderInt("Taille pinceau", &BrushSize, 1, 50);
+
+    ImGui::BeginDisabled(!UndoAvailable);
+    if (ImGui::Button("Undo (Ctrl+Z)"))
+        Undo();
+    ImGui::EndDisabled();
+    ImGui::SameLine();
+    ImGui::BeginDisabled(!RedoAvailable);
+    if (ImGui::Button("Redo (Ctrl+Y)"))
+        Redo();
+    ImGui::EndDisabled();
+}
+
+void UI::Undo() {
+    if (!UndoAvailable)
+        return;
+
+    Layer& layer = MyDocument->getLayer(UndoLayerIndex);
+
+    RedoLayerIndex = UndoLayerIndex;
+    RedoBuffer = layer.getBuffer();
+    RedoAvailable = true;
+
+    layer.setBuffer(UndoBuffer);
+    UndoAvailable = false;
+}
+
+void UI::Redo() {
+    if (!RedoAvailable)
+        return;
+
+    Layer& layer = MyDocument->getLayer(RedoLayerIndex);
+
+    UndoLayerIndex = RedoLayerIndex;
+    UndoBuffer = layer.getBuffer();
+    UndoAvailable = true;
+
+    layer.setBuffer(RedoBuffer);
+    RedoAvailable = false;
 }
 
 }
