@@ -116,21 +116,31 @@ void UI::DrawFrame() {
                     UndoAvailable = true;
                     RedoAvailable = false;
                 }
-                if (CurrentTool == ToolMode::Brush) {
-                    uint8_t r = NormalizeColor(BrushColor[0]);
-                    uint8_t g = NormalizeColor(BrushColor[1]);
-                    uint8_t b = NormalizeColor(BrushColor[2]);
-                    active->DrawBrush(MousePixelX, MousePixelY, BrushSize, r, g, b, 255,
-                        HasSelection, SelectionMinX, SelectionMinY, SelectionMaxX, SelectionMaxY);
-                } else if (CurrentTool == ToolMode::Eraser) {
-                    active->DrawBrush(MousePixelX, MousePixelY, BrushSize, 0, 0, 0, 0,
-                        HasSelection, SelectionMinX, SelectionMinY, SelectionMaxX, SelectionMaxY);
-                } else if (CurrentTool == ToolMode::Picker) {
-                    std::vector<uint8_t> flat = MyDocument->Composite();
-                    size_t idx = (static_cast<size_t>(MousePixelY) * MyDocument->getWidth() + MousePixelX) * 4;
-                    BrushColor[0] = flat[idx + 0];
-                    BrushColor[1] = flat[idx + 1];
-                    BrushColor[2] = flat[idx + 2];
+                if (EditingMask) {
+                    if (CurrentTool == ToolMode::Brush) {
+                        active->DrawMaskBrush(MousePixelX, MousePixelY, BrushSize, 255,
+                            HasSelection, SelectionMinX, SelectionMinY, SelectionMaxX, SelectionMaxY);
+                    } else if (CurrentTool == ToolMode::Eraser) {
+                        active->DrawMaskBrush(MousePixelX, MousePixelY, BrushSize, 0,
+                            HasSelection, SelectionMinX, SelectionMinY, SelectionMaxX, SelectionMaxY);
+                    }
+                } else {
+                    if (CurrentTool == ToolMode::Brush) {
+                        uint8_t r = NormalizeColor(BrushColor[0]);
+                        uint8_t g = NormalizeColor(BrushColor[1]);
+                        uint8_t b = NormalizeColor(BrushColor[2]);
+                        active->DrawBrush(MousePixelX, MousePixelY, BrushSize, r, g, b, 255,
+                            HasSelection, SelectionMinX, SelectionMinY, SelectionMaxX, SelectionMaxY);
+                    } else if (CurrentTool == ToolMode::Eraser) {
+                        active->DrawBrush(MousePixelX, MousePixelY, BrushSize, 0, 0, 0, 0,
+                            HasSelection, SelectionMinX, SelectionMinY, SelectionMaxX, SelectionMaxY);
+                    } else if (CurrentTool == ToolMode::Picker) {
+                        std::vector<uint8_t> flat = MyDocument->Composite();
+                        size_t idx = (static_cast<size_t>(MousePixelY) * MyDocument->getWidth() + MousePixelX) * 4;
+                        BrushColor[0] = flat[idx + 0];
+                        BrushColor[1] = flat[idx + 1];
+                        BrushColor[2] = flat[idx + 2];
+                    }
                 }
             }
         }
@@ -243,13 +253,19 @@ void UI::DrawToolbar() {
     ImGui::Text("Outils");
 
     int toolIndex = (CurrentTool == ToolMode::Brush) ? 0 : (CurrentTool == ToolMode::Eraser) ? 1 : (CurrentTool == ToolMode::Picker) ? 2 : 3;
-    if (ImGui::RadioButton("Pinceau", toolIndex == 0)) CurrentTool = ToolMode::Brush;
+    if (ImGui::RadioButton("Pinceau", toolIndex == 0))
+        CurrentTool = ToolMode::Brush;
     ImGui::SameLine();
-    if (ImGui::RadioButton("Gomme", toolIndex == 1)) CurrentTool = ToolMode::Eraser;
+    if (ImGui::RadioButton("Gomme", toolIndex == 1))
+        CurrentTool = ToolMode::Eraser;
     ImGui::SameLine();
-    if (ImGui::RadioButton("Pipette", toolIndex == 2)) CurrentTool = ToolMode::Picker;
+    if (ImGui::RadioButton("Pipette", toolIndex == 2))
+        CurrentTool = ToolMode::Picker;
     ImGui::SameLine();
-    if (ImGui::RadioButton("Selection", toolIndex == 3)) CurrentTool = ToolMode::Selection;
+    if (ImGui::RadioButton("Selection", toolIndex == 3))
+        CurrentTool = ToolMode::Selection;
+
+    ImGui::Checkbox("Editer le masque (calque actif)", &EditingMask);
 
     if (HasSelection) {
         ImGui::SameLine();
@@ -281,9 +297,11 @@ void UI::Undo() {
 
     RedoLayerIndex = UndoLayerIndex;
     RedoBuffer = layer.getBuffer();
+    RedoMask = layer.getMask();
     RedoAvailable = true;
 
     layer.setBuffer(UndoBuffer);
+    layer.setMask(UndoMask);
     UndoAvailable = false;
 }
 
@@ -295,9 +313,11 @@ void UI::Redo() {
 
     UndoLayerIndex = RedoLayerIndex;
     UndoBuffer = layer.getBuffer();
+    UndoMask = layer.getMask();
     UndoAvailable = true;
 
     layer.setBuffer(RedoBuffer);
+    layer.setMask(RedoMask);
     RedoAvailable = false;
 }
 

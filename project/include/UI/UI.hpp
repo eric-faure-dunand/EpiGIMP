@@ -42,15 +42,18 @@ class UI {
     int BrushColor[3] = {0, 0, 0};
     int BrushSize = 4;
     ToolMode CurrentTool = ToolMode::Brush;
+    bool EditingMask = false;
 
     int LayerCounter = 1;
 
     int UndoLayerIndex = -1;
     std::vector<uint8_t> UndoBuffer;
+    std::vector<uint8_t> UndoMask;
     bool UndoAvailable = false;
 
     int RedoLayerIndex = -1;
     std::vector<uint8_t> RedoBuffer;
+    std::vector<uint8_t> RedoMask;
     bool RedoAvailable = false;
 
     bool HasSelection = false;
