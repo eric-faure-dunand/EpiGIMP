@@ -30,6 +30,11 @@ class UI {
     int MousePixelX = 0;
     int MousePixelY = 0;
 
+    int BrushColor[3] = {0, 0, 0};
+    int BrushSize = 4;
+
+    uint8_t NormalizeColor(int value);
+
 public:
     UI(const std::string& imagePath);
     ~UI();
