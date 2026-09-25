@@ -8,7 +8,7 @@ Document::Document(int width, int height) : Width(width), Height(height) {
 
 void Document::LoadBaseLayerFromFile(const std::string& path) {
     auto layer = std::make_unique<Layer>(1, 1, "Background");
-    layer->LoadFromFile(path);   // ajuste sa propre taille a celle de l'image chargee
+    layer->LoadFromFile(path);
 
     Width = layer->getWidth();
     Height = layer->getHeight();
