@@ -33,6 +33,7 @@ class UI {
 
     bool MouseInCanvas = false;
     bool MouseDown = false;
+    bool StrokeStarted = false;
     bool MouseDragging = false;
     int MousePixelX = 0;
     int MousePixelY = 0;
@@ -43,6 +44,14 @@ class UI {
 
     int LayerCounter = 1;
 
+    int UndoLayerIndex = -1;
+    std::vector<uint8_t> UndoBuffer;
+    bool UndoAvailable = false;
+
+    int RedoLayerIndex = -1;
+    std::vector<uint8_t> RedoBuffer;
+    bool RedoAvailable = false;
+
     uint8_t NormalizeColor(int value);
 
 public:
@@ -52,6 +61,10 @@ public:
     void DrawFrame();
     void UpdateCanvasMouseInput();
     void DrawLayerPanel();
+    void DrawToolbar();
+
+    void Undo();
+    void Redo();
 
     bool open() {return !ShouldClose;};
 };
