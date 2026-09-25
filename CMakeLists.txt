@@ -45,7 +45,7 @@ target_include_directories(EpiGIMP
         project/include/Error
         project/include/Core
         project/include/Printer
-        project/include/
+        project/include/UI
 )
 
 target_compile_options(EpiGIMP
