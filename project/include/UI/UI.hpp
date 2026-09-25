@@ -15,6 +15,12 @@
     #include "document.hpp"
 
 namespace gimp {
+
+enum class ToolMode {
+    Brush,
+    Eraser
+};
+
 class UI {
     GLFWwindow* Window = nullptr;
     bool ShouldClose = false;
@@ -32,6 +38,7 @@ class UI {
 
     int BrushColor[3] = {0, 0, 0};
     int BrushSize = 4;
+    ToolMode CurrentTool = ToolMode::Brush;
 
     int LayerCounter = 1;
 

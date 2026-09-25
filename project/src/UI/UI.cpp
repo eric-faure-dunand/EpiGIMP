@@ -87,14 +87,23 @@ void UI::DrawFrame() {
     UpdateCanvasMouseInput();
 
     if (MouseInCanvas && (MouseDown || MouseDragging)) {
-        uint8_t r = NormalizeColor(BrushColor[0]);
-        uint8_t g = NormalizeColor(BrushColor[1]);
-        uint8_t b = NormalizeColor(BrushColor[2]);
-
         Layer* active = MyDocument->getActiveLayer();
-        if (active)
-            active->DrawBrush(MousePixelX, MousePixelY, BrushSize, r, g, b, 255);
+        if (active) {
+            if (CurrentTool == ToolMode::Brush) {
+                uint8_t r = NormalizeColor(BrushColor[0]);
+                uint8_t g = NormalizeColor(BrushColor[1]);
+                uint8_t b = NormalizeColor(BrushColor[2]);
+                active->DrawBrush(MousePixelX, MousePixelY, BrushSize, r, g, b, 255);
+            } else if (CurrentTool == ToolMode::Eraser) {
+                active->DrawBrush(MousePixelX, MousePixelY, BrushSize, 0, 0, 0, 0);   // alpha = 0 -> transparent
+            }
+        }
     }
+
+    int toolIndex = (CurrentTool == ToolMode::Brush) ? 0 : 1;
+    if (ImGui::RadioButton("Pinceau", toolIndex == 0)) CurrentTool = ToolMode::Brush;
+    ImGui::SameLine();
+    if (ImGui::RadioButton("Gomme", toolIndex == 1)) CurrentTool = ToolMode::Eraser;
 
     ImGui::SliderInt3("Couleur (RGB)", BrushColor, 0, 255, "%d", ImGuiSliderFlags_AlwaysClamp);
     ImGui::SameLine();
