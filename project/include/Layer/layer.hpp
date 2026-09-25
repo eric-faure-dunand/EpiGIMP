@@ -21,7 +21,8 @@ public:
     Layer(int width, int height, const std::string& name);
 
     void SetPixel(int x, int y, uint8_t r, uint8_t g, uint8_t b, uint8_t a);
-    void DrawBrush(int centerX, int centerY, int radius, uint8_t r, uint8_t g, uint8_t b, uint8_t a);
+    void DrawBrush(int centerX, int centerY, int radius, uint8_t r, uint8_t g, uint8_t b, uint8_t a,
+        bool hasClip = false, int clipMinX = 0, int clipMinY = 0, int clipMaxX = 0, int clipMaxY = 0);
     void LoadFromFile(const std::string& path);
 
     int getWidth() const {return Width;};
