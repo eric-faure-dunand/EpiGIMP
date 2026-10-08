@@ -39,6 +39,8 @@ file(GLOB_RECURSE PROJECT_SRCS ${CMAKE_SOURCE_DIR}/project/src/*.cpp)
 
 add_executable(EpiGIMP ${PROJECT_SRCS})
 
+target_include_directories(EpiGIMP SYSTEM PRIVATE vendor/stb)
+
 target_include_directories(EpiGIMP
     PRIVATE
         project/include
@@ -50,8 +52,6 @@ target_include_directories(EpiGIMP
         project/include/Document
         project/include/UI
 )
-
-target_include_directories(EpiGIMP SYSTEM PRIVATE vendor/stb)
 
 target_compile_options(EpiGIMP
     PRIVATE

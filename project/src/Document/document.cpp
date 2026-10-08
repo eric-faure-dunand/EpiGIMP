@@ -46,21 +46,27 @@ std::vector<uint8_t> Document::Composite() const {
             continue;
 
         const std::vector<uint8_t>& src = layerPtr->getBuffer();
+        const std::vector<uint8_t>& mask = layerPtr->getMask();
 
-        for (size_t p = 0; p < result.size(); p += 4) {
-            uint8_t srcA = src[p + 3];
-            if (srcA == 0)
+        size_t pixelCount = static_cast<size_t>(Width) * Height;
+        for (size_t p = 0; p < pixelCount; p++) {
+            size_t bufIdx = p * 4;
+
+            uint8_t srcA = src[bufIdx + 3];
+            uint8_t maskValue = mask[p];
+
+            if (srcA == 0 || maskValue == 0)
                 continue;
+            float alpha = (srcA / 255.0f) * (maskValue / 255.0f);
 
-            float alpha = srcA / 255.0f;
             for (int c = 0; c < 3; c++) {
-                float srcC = src[p + c];
-                float dstC = result[p + c];
-                result[p + c] = static_cast<uint8_t>(srcC * alpha + dstC * (1.0f - alpha));
+                float srcC = src[bufIdx + c];
+                float dstC = result[bufIdx + c];
+                result[bufIdx + c] = static_cast<uint8_t>(srcC * alpha + dstC * (1.0f - alpha));
             }
-            float dstA = result[p + 3] / 255.0f;
+            float dstA = result[bufIdx + 3] / 255.0f;
             float outA = alpha + dstA * (1.0f - alpha);
-            result[p + 3] = static_cast<uint8_t>(outA * 255.0f);
+            result[bufIdx + 3] = static_cast<uint8_t>(outA * 255.0f);
         }
     }
 
