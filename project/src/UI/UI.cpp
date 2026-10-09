@@ -29,6 +29,9 @@ UI::UI(const std::string& imagePath) {
     ImGui_ImplGlfw_InitForOpenGL(Window, true);
     ImGui_ImplOpenGL3_Init("#version 330");
 
+    Icons = std::make_unique<IconLibrary>(EPIGIMP_ASSETS_DIR "/icons");
+    LoadIcons();
+
     MyDocument = std::make_unique<Document>(1, 1);
     MyDocument->LoadBaseLayerFromFile(imagePath);
 
@@ -38,6 +41,7 @@ UI::UI(const std::string& imagePath) {
 
 UI::~UI() {
     MyCanvas.reset();
+    Icons.reset();
 
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
@@ -54,6 +58,40 @@ uint8_t UI::NormalizeColor(int value) {
     if (value > 255)
         return 255;
     return static_cast<uint8_t>(value);
+}
+
+void UI::LoadIcons() {
+    for (const ToolInfo& tool : GetTools())
+        Icons->Load(tool.IconName, std::string(tool.IconName) + ".png");
+    Icons->Load("mask", "mask.png");
+    Icons->Load("deselect", "deselect.png");
+    Icons->Load("undo", "undo.png");
+    Icons->Load("redo", "redo.png");
+}
+
+void UI::HandleShortcuts() {
+    ImGuiIO& io = ImGui::GetIO();
+    if (io.WantTextInput)
+        return;
+
+    for (const ToolInfo& tool : GetTools()) {
+        if (ImGui::IsKeyChordPressed(tool.Shortcut))
+            CurrentTool = tool.Mode;
+    }
+
+    if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_Z))
+        Undo();
+    if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_Y))
+        Redo();
+    if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiMod_Shift | ImGuiKey_A))
+        HasSelection = false;
+
+    if (io.KeyMods == ImGuiMod_None) {
+        if (ImGui::IsKeyPressed(ImGuiKey_LeftBracket) || ImGui::IsKeyPressed(ImGuiKey_KeypadSubtract))
+            BrushSize = std::max(BrushSizeMin, BrushSize - 1);
+        if (ImGui::IsKeyPressed(ImGuiKey_RightBracket) || ImGui::IsKeyPressed(ImGuiKey_KeypadAdd))
+            BrushSize = std::min(BrushSizeMax, BrushSize + 1);
+    }
 }
 
 void UI::DrawFrame() {
@@ -149,11 +187,7 @@ void UI::DrawFrame() {
         }
     }
 
-    ImGuiIO& io = ImGui::GetIO();
-    if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_Z, false))
-        Undo();
-    if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_Y, false))
-        Redo();
+    HandleShortcuts();
 
     DrawToolbar();
     DrawLayerPanel();
@@ -252,44 +286,75 @@ void UI::DrawLayerPanel() {
 }
 
 void UI::DrawToolbar() {
-    ImGui::Separator();
-    ImGui::Text("Outils");
+    const ToolInfo& current = GetToolInfo(CurrentTool);
+    const float groupSpacing = ImGui::GetStyle().ItemSpacing.x * 4.0f;
 
-    int toolIndex = (CurrentTool == ToolMode::Brush) ? 0 : (CurrentTool == ToolMode::Eraser) ? 1 : (CurrentTool == ToolMode::Picker) ? 2 : 3;
-    if (ImGui::RadioButton("Pinceau", toolIndex == 0))
-        CurrentTool = ToolMode::Brush;
-    ImGui::SameLine();
-    if (ImGui::RadioButton("Gomme", toolIndex == 1))
-        CurrentTool = ToolMode::Eraser;
-    ImGui::SameLine();
-    if (ImGui::RadioButton("Pipette", toolIndex == 2))
-        CurrentTool = ToolMode::Picker;
-    ImGui::SameLine();
-    if (ImGui::RadioButton("Selection", toolIndex == 3))
-        CurrentTool = ToolMode::Selection;
+    ImGui::SeparatorText("Outils");
 
-    ImGui::Checkbox("Editer le masque (calque actif)", &EditingMask);
-
-    if (HasSelection) {
-        ImGui::SameLine();
-        if (ImGui::Button("Deselectionner"))
-            HasSelection = false;
+    bool first = true;
+    for (const ToolInfo& tool : GetTools()) {
+        if (!first)
+            ImGui::SameLine();
+        first = false;
+        if (Widgets::IconButton(tool.IconName, Icons->Get(tool.IconName), tool.Label, ToolIconSize, tool.Mode == CurrentTool))
+            CurrentTool = tool.Mode;
+        Widgets::RichTooltip(tool.Label, tool.ShortcutLabel, tool.Description);
     }
 
-    ImGui::SliderInt3("Couleur (RGB)", BrushColor, 0, 255, "%d", ImGuiSliderFlags_AlwaysClamp);
+    ImGui::SameLine(0.0f, groupSpacing);
+    if (Widgets::IconButton("mask", Icons->Get("mask"), "Masque", ToolIconSize, EditingMask))
+        EditingMask = !EditingMask;
+    Widgets::RichTooltip(EditingMask ? "Edition du masque : activee" : "Edition du masque : desactivee", nullptr,
+        "Le pinceau et la gomme modifient le masque du calque actif au lieu de ses pixels.");
+
     ImGui::SameLine();
-    ImVec4 previewColor(BrushColor[0] / 255.0f, BrushColor[1] / 255.0f, BrushColor[2] / 255.0f, 1.0f);
-    ImGui::ColorButton("Apercu couleur", previewColor, ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoDragDrop, ImVec2(24, 24));
-
-    ImGui::SliderInt("Taille pinceau", &BrushSize, 1, 50);
-
-    ImGui::BeginDisabled(!UndoAvailable);
-    if (ImGui::Button("Undo (Ctrl+Z)")) Undo();
+    ImGui::BeginDisabled(!HasSelection);
+    if (Widgets::IconButton("deselect", Icons->Get("deselect"), "Deselectionner", ToolIconSize))
+        HasSelection = false;
     ImGui::EndDisabled();
+    Widgets::RichTooltip("Deselectionner", "Ctrl+Shift+A",
+        HasSelection ? "Supprime la selection : les outils agissent de nouveau sur tout le calque."
+                     : "Aucune selection active.");
+
+    ImGui::SameLine(0.0f, groupSpacing);
+    ImGui::BeginDisabled(!UndoAvailable);
+    if (Widgets::IconButton("undo", Icons->Get("undo"), "Annuler", ToolIconSize))
+        Undo();
+    ImGui::EndDisabled();
+    Widgets::RichTooltip("Annuler", "Ctrl+Z", "Annule la derniere modification.");
+
     ImGui::SameLine();
     ImGui::BeginDisabled(!RedoAvailable);
-    if (ImGui::Button("Redo (Ctrl+Y)")) Redo();
+    if (Widgets::IconButton("redo", Icons->Get("redo"), "Retablir", ToolIconSize))
+        Redo();
     ImGui::EndDisabled();
+    Widgets::RichTooltip("Retablir", "Ctrl+Y", "Retablit la derniere modification annulee.");
+
+    ImGui::Text("Outil actif : %s [%s]", current.Label, current.ShortcutLabel);
+    if (EditingMask) {
+        ImGui::SameLine();
+        ImGui::TextColored(ImVec4(1.0f, 0.75f, 0.3f, 1.0f), "- mode masque");
+    }
+    if (HasSelection) {
+        ImGui::SameLine();
+        ImGui::TextDisabled("- selection %dx%d px",
+            SelectionMaxX - SelectionMinX + 1, SelectionMaxY - SelectionMinY + 1);
+    }
+    Widgets::Hint(current.Description);
+
+    float color[3] = {BrushColor[0] / 255.0f, BrushColor[1] / 255.0f, BrushColor[2] / 255.0f};
+    if (ImGui::ColorEdit3("Couleur", color, ImGuiColorEditFlags_Uint8 | ImGuiColorEditFlags_DisplayRGB | ImGuiColorEditFlags_InputRGB)) {
+        for (int i = 0; i < 3; i++)
+            BrushColor[i] = NormalizeColor(static_cast<int>(color[i] * 255.0f + 0.5f));
+    }
+
+    ImGui::BeginDisabled(!current.UsesSize);
+    ImGui::SliderInt("Taille", &BrushSize, BrushSizeMin, BrushSizeMax, "%d px", ImGuiSliderFlags_AlwaysClamp);
+    ImGui::EndDisabled();
+    Widgets::RichTooltip("Taille du pinceau", "[ / ]",
+        current.UsesSize ? "Rayon du pinceau et de la gomme, en pixels. Aussi : - / + du pave numerique."
+                         : "Sans effet sur l'outil actif.");
+
     if (!FilterStatus.empty())
         ImGui::TextUnformatted(FilterStatus.c_str());
 }

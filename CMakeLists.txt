@@ -52,6 +52,14 @@ target_include_directories(EpiGIMP
         project/include/Document
         project/include/Filter
         project/include/UI
+        project/include/Icon
+        project/include/Tool
+        project/include/Widgets
+)
+
+target_compile_definitions(EpiGIMP
+    PRIVATE
+        EPIGIMP_ASSETS_DIR="${CMAKE_SOURCE_DIR}/assets"
 )
 
 target_compile_options(EpiGIMP

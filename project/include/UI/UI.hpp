@@ -14,21 +14,22 @@
     #include "canvas.hpp"
     #include "document.hpp"
     #include "filter.hpp"
+    #include "iconLibrary.hpp"
+    #include "tool.hpp"
+    #include "widgets.hpp"
 
 namespace gimp {
 
-enum class ToolMode {
-    Brush,
-    Eraser,
-    Picker,
-    Selection
-};
-
 class UI {
+    static constexpr float ToolIconSize = 24.0f;
+    static constexpr int BrushSizeMin = 1;
+    static constexpr int BrushSizeMax = 50;
+
     GLFWwindow* Window = nullptr;
     bool ShouldClose = false;
     std::unique_ptr<Canvas> MyCanvas;
     std::unique_ptr<Document> MyDocument;
+    std::unique_ptr<IconLibrary> Icons;
 
     char ExportPathBuffer[256] = "output.png";
     std::string ExportStatus;
@@ -71,6 +72,8 @@ class UI {
     int SelectionMaxY = 0;
 
     uint8_t NormalizeColor(int value);
+    void LoadIcons();
+    void HandleShortcuts();
 
 public:
     UI(const std::string& imagePath);
