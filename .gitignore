@@ -2,3 +2,4 @@ build/
 EpiGIMP
 imgui.ini
 *.png
+!assets/**/*.png
