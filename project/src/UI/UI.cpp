@@ -309,6 +309,18 @@ void UI::DrawToolbar() {
             FilterStatus = "Inversion appliquee sur: " + active->getName();
         }
     }
+    ImGui::SliderInt("Luminosite", &FilterBrightness, -100, 100);
+    ImGui::SliderInt("Contraste", &FilterContrast, -100, 100);
+    if (ImGui::Button("Appliquer luminosite/contraste")) {
+        Layer* active = MyDocument->getActiveLayer();
+        if (active) {
+            SaveUndoSnapshot();
+            Filter::BrightnessContrast(*active, FilterBrightness, FilterContrast);
+            FilterStatus = "Luminosite/contraste applique sur: " + active->getName();
+            FilterBrightness = 0;
+            FilterContrast = 0;
+        }
+    }
     if (!FilterStatus.empty())
         ImGui::TextUnformatted(FilterStatus.c_str());
 }
