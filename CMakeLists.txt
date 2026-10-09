@@ -50,6 +50,7 @@ target_include_directories(EpiGIMP
         project/include/Canvas
         project/include/Layer
         project/include/Document
+        project/include/Filter
         project/include/UI
 )
 
