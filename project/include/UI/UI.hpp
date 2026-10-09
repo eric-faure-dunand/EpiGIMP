@@ -36,6 +36,7 @@ class UI {
     std::string FilterStatus;
     int FilterBrightness = 0;
     int FilterContrast = 0;
+    bool OpenBrightnessPopup = false;
 
     bool MouseInCanvas = false;
     bool MouseDown = false;
@@ -79,6 +80,7 @@ public:
     void UpdateCanvasMouseInput();
     void DrawLayerPanel();
     void DrawToolbar();
+    void DrawMenuBar();
 
     void Undo();
     void Redo();

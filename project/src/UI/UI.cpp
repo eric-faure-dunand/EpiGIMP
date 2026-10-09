@@ -68,6 +68,8 @@ void UI::DrawFrame() {
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
+    DrawMenuBar();
+
     ImGuiViewport* viewport = ImGui::GetMainViewport();
     ImGui::SetNextWindowPos(viewport->WorkPos);
     ImGui::SetNextWindowSize(viewport->WorkSize);
@@ -288,41 +290,61 @@ void UI::DrawToolbar() {
     ImGui::BeginDisabled(!RedoAvailable);
     if (ImGui::Button("Redo (Ctrl+Y)")) Redo();
     ImGui::EndDisabled();
-
-    ImGui::Separator();
-    ImGui::Text("Filtres");
-
-    if (ImGui::Button("Niveaux de gris")) {
-        Layer* active = MyDocument->getActiveLayer();
-        if (active) {
-            SaveUndoSnapshot();
-            Filter::Grayscale(*active);
-            FilterStatus = "Niveaux de gris applique sur: " + active->getName();
-        }
-    }
-    ImGui::SameLine();
-    if (ImGui::Button("Inversion")) {
-        Layer* active = MyDocument->getActiveLayer();
-        if (active) {
-            SaveUndoSnapshot();
-            Filter::Invert(*active);
-            FilterStatus = "Inversion appliquee sur: " + active->getName();
-        }
-    }
-    ImGui::SliderInt("Luminosite", &FilterBrightness, -100, 100);
-    ImGui::SliderInt("Contraste", &FilterContrast, -100, 100);
-    if (ImGui::Button("Appliquer luminosite/contraste")) {
-        Layer* active = MyDocument->getActiveLayer();
-        if (active) {
-            SaveUndoSnapshot();
-            Filter::BrightnessContrast(*active, FilterBrightness, FilterContrast);
-            FilterStatus = "Luminosite/contraste applique sur: " + active->getName();
-            FilterBrightness = 0;
-            FilterContrast = 0;
-        }
-    }
     if (!FilterStatus.empty())
         ImGui::TextUnformatted(FilterStatus.c_str());
+}
+
+void UI::DrawMenuBar() {
+    if (ImGui::BeginMainMenuBar()) {
+        if (ImGui::BeginMenu("Filtres")) {
+            Layer* active = MyDocument->getActiveLayer();
+
+            if (ImGui::MenuItem("Niveaux de gris") && active) {
+                SaveUndoSnapshot();
+                Filter::Grayscale(*active);
+                FilterStatus = "Niveaux de gris applique sur: " + active->getName();
+            }
+            if (ImGui::MenuItem("Inversion") && active) {
+                SaveUndoSnapshot();
+                Filter::Invert(*active);
+                FilterStatus = "Inversion appliquee sur: " + active->getName();
+            }
+            if (ImGui::MenuItem("Luminosite / Contraste..."))
+                OpenBrightnessPopup = true;
+
+            ImGui::EndMenu();
+        }
+        ImGui::EndMainMenuBar();
+    }
+
+    if (OpenBrightnessPopup) {
+        ImGui::OpenPopup("Luminosite / Contraste");
+        OpenBrightnessPopup = false;
+    }
+
+    if (ImGui::BeginPopupModal("Luminosite / Contraste", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::SliderInt("Luminosite", &FilterBrightness, -100, 100);
+        ImGui::SliderInt("Contraste", &FilterContrast, -100, 100);
+
+        if (ImGui::Button("Appliquer")) {
+            Layer* active = MyDocument->getActiveLayer();
+            if (active) {
+                SaveUndoSnapshot();
+                Filter::BrightnessContrast(*active, FilterBrightness, FilterContrast);
+                FilterStatus = "Luminosite/contraste applique sur: " + active->getName();
+            }
+            FilterBrightness = 0;
+            FilterContrast = 0;
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Annuler")) {
+            FilterBrightness = 0;
+            FilterContrast = 0;
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
 }
 
 void UI::Undo() {
