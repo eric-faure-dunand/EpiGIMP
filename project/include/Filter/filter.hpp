@@ -10,6 +10,7 @@ namespace gimp {
 class Filter {
 public:
     static void Grayscale(Layer& layer);
+    static void Invert(Layer& layer);
 };
 
 }

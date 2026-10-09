@@ -33,6 +33,8 @@ class UI {
     char ExportPathBuffer[256] = "output.png";
     std::string ExportStatus;
 
+    std::string FilterStatus;
+
     bool MouseInCanvas = false;
     bool MouseDown = false;
     bool StrokeStarted = false;
