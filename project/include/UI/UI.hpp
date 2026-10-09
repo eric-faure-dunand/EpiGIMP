@@ -34,6 +34,8 @@ class UI {
     std::string ExportStatus;
 
     std::string FilterStatus;
+    int FilterBrightness = 0;
+    int FilterContrast = 0;
 
     bool MouseInCanvas = false;
     bool MouseDown = false;
