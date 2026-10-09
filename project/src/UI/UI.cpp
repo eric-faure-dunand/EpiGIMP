@@ -297,8 +297,20 @@ void UI::DrawToolbar() {
         if (active) {
             SaveUndoSnapshot();
             Filter::Grayscale(*active);
+            FilterStatus = "Niveaux de gris applique sur: " + active->getName();
         }
     }
+    ImGui::SameLine();
+    if (ImGui::Button("Inversion")) {
+        Layer* active = MyDocument->getActiveLayer();
+        if (active) {
+            SaveUndoSnapshot();
+            Filter::Invert(*active);
+            FilterStatus = "Inversion appliquee sur: " + active->getName();
+        }
+    }
+    if (!FilterStatus.empty())
+        ImGui::TextUnformatted(FilterStatus.c_str());
 }
 
 void UI::Undo() {
