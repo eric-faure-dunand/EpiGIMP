@@ -111,6 +111,7 @@ void UI::DrawFrame() {
             Layer* active = MyDocument->getActiveLayer();
             if (active) {
                 if (StrokeStarted && CurrentTool != ToolMode::Picker) {
+                    SaveUndoSnapshot();
                     UndoLayerIndex = MyDocument->getActiveLayerIndex();
                     UndoBuffer = active->getBuffer();
                     UndoAvailable = true;
@@ -287,6 +288,17 @@ void UI::DrawToolbar() {
     ImGui::BeginDisabled(!RedoAvailable);
     if (ImGui::Button("Redo (Ctrl+Y)")) Redo();
     ImGui::EndDisabled();
+
+    ImGui::Separator();
+    ImGui::Text("Filtres");
+
+    if (ImGui::Button("Niveaux de gris")) {
+        Layer* active = MyDocument->getActiveLayer();
+        if (active) {
+            SaveUndoSnapshot();
+            Filter::Grayscale(*active);
+        }
+    }
 }
 
 void UI::Undo() {
@@ -318,6 +330,18 @@ void UI::Redo() {
 
     layer.setBuffer(RedoBuffer);
     layer.setMask(RedoMask);
+    RedoAvailable = false;
+}
+
+void UI::SaveUndoSnapshot() {
+    Layer* active = MyDocument->getActiveLayer();
+    if (!active)
+        return;
+
+    UndoLayerIndex = MyDocument->getActiveLayerIndex();
+    UndoBuffer = active->getBuffer();
+    UndoMask = active->getMask();
+    UndoAvailable = true;
     RedoAvailable = false;
 }
 

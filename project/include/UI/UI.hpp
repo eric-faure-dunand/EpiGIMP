@@ -13,6 +13,7 @@
     #include "Error.hpp"
     #include "canvas.hpp"
     #include "document.hpp"
+    #include "filter.hpp"
 
 namespace gimp {
 
@@ -77,6 +78,7 @@ public:
 
     void Undo();
     void Redo();
+    void SaveUndoSnapshot();
 
     bool open() {return !ShouldClose;};
 };
