@@ -55,6 +55,7 @@ target_include_directories(EpiGIMP
         project/include/Icon
         project/include/Tool
         project/include/Widgets
+        project/include/Theme
 )
 
 target_compile_definitions(EpiGIMP

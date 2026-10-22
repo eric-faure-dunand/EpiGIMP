@@ -1,5 +1,8 @@
 #include "UI.hpp"
 
+#include <algorithm>
+#include <cmath>
+
 namespace gimp {
 
 UI::UI(const std::string& imagePath) {
@@ -24,7 +27,7 @@ UI::UI(const std::string& imagePath) {
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
-    ImGui::StyleColorsDark();
+    Theme::Apply();
 
     ImGui_ImplGlfw_InitForOpenGL(Window, true);
     ImGui_ImplOpenGL3_Init("#version 330");
@@ -58,6 +61,10 @@ uint8_t UI::NormalizeColor(int value) {
     if (value > 255)
         return 255;
     return static_cast<uint8_t>(value);
+}
+
+float UI::ToolbarRowHeight() const {
+    return ToolIconSize + ImGui::GetStyle().FramePadding.y * 2.0f;
 }
 
 void UI::LoadIcons() {
@@ -108,19 +115,80 @@ void UI::DrawFrame() {
 
     DrawMenuBar();
 
-    ImGuiViewport* viewport = ImGui::GetMainViewport();
-    ImGui::SetNextWindowPos(viewport->WorkPos);
-    ImGui::SetNextWindowSize(viewport->WorkSize);
+    const ImGuiViewport* viewport = ImGui::GetMainViewport();
+    const ImGuiStyle& style = ImGui::GetStyle();
+    const float toolbarHeight = ToolbarRowHeight() + ImGui::GetTextLineHeight()
+                              + style.ItemSpacing.y + style.WindowPadding.y * 2.0f;
+    const float statusBarHeight = ImGui::GetTextLineHeight() + StatusBarPadding.y * 2.0f;
+    const ImVec2 origin = viewport->WorkPos;
+    const ImVec2 size = viewport->WorkSize;
 
-    ImGuiWindowFlags flags = ImGuiWindowFlags_NoMove
-                            | ImGuiWindowFlags_NoResize
-                            | ImGuiWindowFlags_NoCollapse
-                            | ImGuiWindowFlags_NoTitleBar
-                            | ImGuiWindowFlags_NoBringToFrontOnFocus;
+    ImGui::SetNextWindowPos(origin);
+    ImGui::SetNextWindowSize(ImVec2(size.x, toolbarHeight));
+    ImGui::Begin("Toolbar", nullptr, PanelFlags);
+    DrawToolbar();
+    ImGui::End();
 
-    ImGui::Begin("Canvas", nullptr, flags);
+    ImGui::SetNextWindowPos(ImVec2(origin.x, origin.y + toolbarHeight));
+    ImGui::SetNextWindowSize(ImVec2(size.x, size.y - toolbarHeight - statusBarHeight));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+    ImGui::Begin("Workspace", nullptr, PanelFlags);
+    ImGui::PopStyleVar(2);
+    DrawWorkspace();
+    ImGui::End();
 
-        ImGui::Image(
+    ImGui::SetNextWindowPos(ImVec2(origin.x, origin.y + size.y - statusBarHeight));
+    ImGui::SetNextWindowSize(ImVec2(size.x, statusBarHeight));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, StatusBarPadding);
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, Theme::BarBg);
+    ImGui::Begin("StatusBar", nullptr, PanelFlags);
+    ImGui::PopStyleColor();
+    ImGui::PopStyleVar();
+    DrawStatusBar();
+    ImGui::End();
+
+    HandleShortcuts();
+
+    MyCanvas->UpdateTexture(MyDocument->Composite());
+
+    ImGui::Render();
+
+    int w, h;
+    glfwGetFramebufferSize(Window, &w, &h);
+    glViewport(0, 0, w, h);
+    glClearColor(Theme::CanvasBg.x, Theme::CanvasBg.y, Theme::CanvasBg.z, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+    glfwSwapBuffers(Window);
+}
+
+void UI::DrawWorkspace() {
+    const ImVec2 avail = ImGui::GetContentRegionAvail();
+    const float maxPanelWidth = std::max(SidePanelMinWidth, avail.x - SplitterWidth - CanvasMinWidth);
+    SidePanelWidth = std::clamp(SidePanelWidth, SidePanelMinWidth, maxPanelWidth);
+
+    ImGui::PushStyleColor(ImGuiCol_ChildBg, Theme::CanvasBg);
+    ImGui::BeginChild("CanvasArea", ImVec2(avail.x - SidePanelWidth - SplitterWidth, avail.y),
+        ImGuiChildFlags_AlwaysUseWindowPadding);
+    ImGui::PopStyleColor();
+    DrawCanvas();
+    ImGui::EndChild();
+
+    ImGui::SameLine(0.0f, 0.0f);
+    SidePanelWidth -= Widgets::VerticalSplitter("##side_panel_splitter", SplitterWidth, avail.y);
+
+    ImGui::SameLine(0.0f, 0.0f);
+    ImGui::BeginChild("SidePanel", ImVec2(0.0f, avail.y), ImGuiChildFlags_AlwaysUseWindowPadding);
+    DrawLayerPanel();
+    ImGui::Spacing();
+    DrawExportPanel();
+    ImGui::EndChild();
+}
+
+void UI::DrawCanvas() {
+    ImGui::Image(
         (ImTextureID)(intptr_t)MyCanvas->getTextureId(),
         ImVec2((float)MyCanvas->getWidth(), (float)MyCanvas->getHeight())
     );
@@ -186,40 +254,6 @@ void UI::DrawFrame() {
             }
         }
     }
-
-    HandleShortcuts();
-
-    DrawToolbar();
-    DrawLayerPanel();
-
-    ImGui::Separator();
-    ImGui::InputText("Export path", ExportPathBuffer, sizeof(ExportPathBuffer));
-    ImGui::SameLine();
-    if (ImGui::Button("Export")) {
-        try {
-            MyDocument->SaveToFile(ExportPathBuffer);
-            ExportStatus = "Exporte: " + std::string(ExportPathBuffer);
-        } catch (const IError& e) {
-            ExportStatus = std::string("Erreur: ") + e.what();
-        }
-    }
-    if (!ExportStatus.empty())
-        ImGui::TextUnformatted(ExportStatus.c_str());
-
-    MyCanvas->UpdateTexture(MyDocument->Composite());
-
-    ImGui::End();
-
-    ImGui::Render();
-
-    int w, h;
-    glfwGetFramebufferSize(Window, &w, &h);
-    glViewport(0, 0, w, h);
-    glClearColor(0.15f, 0.15f, 0.15f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
-    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-    glfwSwapBuffers(Window);
 }
 
 void UI::UpdateCanvasMouseInput() {
@@ -254,15 +288,15 @@ void UI::UpdateCanvasMouseInput() {
 }
 
 void UI::DrawLayerPanel() {
-    ImGui::Separator();
-    ImGui::Text("Calques");
+    ImGui::SeparatorText("Calques");
 
-    if (ImGui::Button("+ Ajouter")) {
+    const float buttonWidth = (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x) * 0.5f;
+    if (ImGui::Button("+ Ajouter", ImVec2(buttonWidth, 0.0f))) {
         LayerCounter++;
         MyDocument->AddLayer("Layer " + std::to_string(LayerCounter));
     }
     ImGui::SameLine();
-    if (ImGui::Button("- Supprimer")) {
+    if (ImGui::Button("- Supprimer", ImVec2(buttonWidth, 0.0f))) {
         if (MyDocument->getLayerCount() > 1)
             MyDocument->RemoveLayer(MyDocument->getActiveLayerIndex());
     }
@@ -285,12 +319,30 @@ void UI::DrawLayerPanel() {
     }
 }
 
+void UI::DrawExportPanel() {
+    ImGui::SeparatorText("Export");
+
+    ImGui::TextDisabled("Export path");
+    ImGui::SetNextItemWidth(-FLT_MIN);
+    ImGui::InputText("##export_path", ExportPathBuffer, sizeof(ExportPathBuffer));
+    if (ImGui::Button("Export", ImVec2(-FLT_MIN, 0.0f))) {
+        try {
+            MyDocument->SaveToFile(ExportPathBuffer);
+            StatusMessage = "Exporte: " + std::string(ExportPathBuffer);
+        } catch (const IError& e) {
+            StatusMessage = std::string("Erreur: ") + e.what();
+        }
+    }
+}
+
 void UI::DrawToolbar() {
     const ToolInfo& current = GetToolInfo(CurrentTool);
-    const float groupSpacing = ImGui::GetStyle().ItemSpacing.x * 4.0f;
+    const ImGuiStyle& style = ImGui::GetStyle();
+    const float rowHeight = ToolbarRowHeight();
+    const float groupHeight = rowHeight + style.ItemSpacing.y + ImGui::GetTextLineHeight();
+    const float frameOffset = std::floor((rowHeight - ImGui::GetFrameHeight()) * 0.5f);
 
-    ImGui::SeparatorText("Outils");
-
+    Widgets::BeginRibbonGroup();
     bool first = true;
     for (const ToolInfo& tool : GetTools()) {
         if (!first)
@@ -300,8 +352,10 @@ void UI::DrawToolbar() {
             CurrentTool = tool.Mode;
         Widgets::RichTooltip(tool.Label, tool.ShortcutLabel, tool.Description);
     }
+    Widgets::EndRibbonGroup("Outils", rowHeight);
 
-    ImGui::SameLine(0.0f, groupSpacing);
+    Widgets::VerticalSeparator(groupHeight);
+    Widgets::BeginRibbonGroup();
     if (Widgets::IconButton("mask", Icons->Get("mask"), "Masque", ToolIconSize, EditingMask))
         EditingMask = !EditingMask;
     Widgets::RichTooltip(EditingMask ? "Edition du masque : activee" : "Edition du masque : desactivee", nullptr,
@@ -315,8 +369,10 @@ void UI::DrawToolbar() {
     Widgets::RichTooltip("Deselectionner", "Ctrl+Shift+A",
         HasSelection ? "Supprime la selection : les outils agissent de nouveau sur tout le calque."
                      : "Aucune selection active.");
+    Widgets::EndRibbonGroup("Masque", rowHeight);
 
-    ImGui::SameLine(0.0f, groupSpacing);
+    Widgets::VerticalSeparator(groupHeight);
+    Widgets::BeginRibbonGroup();
     ImGui::BeginDisabled(!UndoAvailable);
     if (Widgets::IconButton("undo", Icons->Get("undo"), "Annuler", ToolIconSize))
         Undo();
@@ -329,34 +385,47 @@ void UI::DrawToolbar() {
         Redo();
     ImGui::EndDisabled();
     Widgets::RichTooltip("Retablir", "Ctrl+Y", "Retablit la derniere modification annulee.");
+    Widgets::EndRibbonGroup("Historique", rowHeight);
 
-    ImGui::Text("Outil actif : %s [%s]", current.Label, current.ShortcutLabel);
+    Widgets::VerticalSeparator(groupHeight);
+    Widgets::BeginRibbonGroup(frameOffset);
+    float color[3] = {BrushColor[0] / 255.0f, BrushColor[1] / 255.0f, BrushColor[2] / 255.0f};
+    ImGui::SetNextItemWidth(ColorFieldWidth);
+    if (ImGui::ColorEdit3("##couleur", color, ImGuiColorEditFlags_Uint8 | ImGuiColorEditFlags_DisplayRGB | ImGuiColorEditFlags_InputRGB)) {
+        for (int i = 0; i < 3; i++)
+            BrushColor[i] = NormalizeColor(static_cast<int>(color[i] * 255.0f + 0.5f));
+    }
+    Widgets::EndRibbonGroup("Couleur", rowHeight);
+
+    Widgets::VerticalSeparator(groupHeight);
+    Widgets::BeginRibbonGroup(frameOffset);
+    ImGui::BeginDisabled(!current.UsesSize);
+    ImGui::SetNextItemWidth(SizeSliderWidth);
+    ImGui::SliderInt("##taille", &BrushSize, BrushSizeMin, BrushSizeMax, "%d px", ImGuiSliderFlags_AlwaysClamp);
+    ImGui::EndDisabled();
+    Widgets::RichTooltip("Taille du pinceau", "[ / ]",
+        current.UsesSize ? "Rayon du pinceau et de la gomme, en pixels. Aussi : - / + du pave numerique."
+                         : "Sans effet sur l'outil actif.");
+    Widgets::EndRibbonGroup("Taille", rowHeight);
+}
+
+void UI::DrawStatusBar() {
+    const ToolInfo& current = GetToolInfo(CurrentTool);
+
+    ImGui::Text("%s [%s]", current.Label, current.ShortcutLabel);
     if (EditingMask) {
         ImGui::SameLine();
-        ImGui::TextColored(ImVec4(1.0f, 0.75f, 0.3f, 1.0f), "- mode masque");
+        ImGui::TextColored(Theme::MaskWarning, "- mode masque");
     }
     if (HasSelection) {
         ImGui::SameLine();
         ImGui::TextDisabled("- selection %dx%d px",
             SelectionMaxX - SelectionMinX + 1, SelectionMaxY - SelectionMinY + 1);
     }
-    Widgets::Hint(current.Description);
-
-    float color[3] = {BrushColor[0] / 255.0f, BrushColor[1] / 255.0f, BrushColor[2] / 255.0f};
-    if (ImGui::ColorEdit3("Couleur", color, ImGuiColorEditFlags_Uint8 | ImGuiColorEditFlags_DisplayRGB | ImGuiColorEditFlags_InputRGB)) {
-        for (int i = 0; i < 3; i++)
-            BrushColor[i] = NormalizeColor(static_cast<int>(color[i] * 255.0f + 0.5f));
+    if (!StatusMessage.empty()) {
+        Widgets::VerticalSeparator(ImGui::GetTextLineHeight());
+        ImGui::TextUnformatted(StatusMessage.c_str());
     }
-
-    ImGui::BeginDisabled(!current.UsesSize);
-    ImGui::SliderInt("Taille", &BrushSize, BrushSizeMin, BrushSizeMax, "%d px", ImGuiSliderFlags_AlwaysClamp);
-    ImGui::EndDisabled();
-    Widgets::RichTooltip("Taille du pinceau", "[ / ]",
-        current.UsesSize ? "Rayon du pinceau et de la gomme, en pixels. Aussi : - / + du pave numerique."
-                         : "Sans effet sur l'outil actif.");
-
-    if (!FilterStatus.empty())
-        ImGui::TextUnformatted(FilterStatus.c_str());
 }
 
 void UI::DrawMenuBar() {
@@ -367,12 +436,12 @@ void UI::DrawMenuBar() {
             if (ImGui::MenuItem("Niveaux de gris") && active) {
                 SaveUndoSnapshot();
                 Filter::Grayscale(*active);
-                FilterStatus = "Niveaux de gris applique sur: " + active->getName();
+                StatusMessage = "Niveaux de gris applique sur: " + active->getName();
             }
             if (ImGui::MenuItem("Inversion") && active) {
                 SaveUndoSnapshot();
                 Filter::Invert(*active);
-                FilterStatus = "Inversion appliquee sur: " + active->getName();
+                StatusMessage = "Inversion appliquee sur: " + active->getName();
             }
             if (ImGui::MenuItem("Luminosite / Contraste..."))
                 OpenBrightnessPopup = true;
@@ -396,7 +465,7 @@ void UI::DrawMenuBar() {
             if (active) {
                 SaveUndoSnapshot();
                 Filter::BrightnessContrast(*active, FilterBrightness, FilterContrast);
-                FilterStatus = "Luminosite/contraste applique sur: " + active->getName();
+                StatusMessage = "Luminosite/contraste applique sur: " + active->getName();
             }
             FilterBrightness = 0;
             FilterContrast = 0;

@@ -15,6 +15,7 @@
     #include "document.hpp"
     #include "filter.hpp"
     #include "iconLibrary.hpp"
+    #include "theme.hpp"
     #include "tool.hpp"
     #include "widgets.hpp"
 
@@ -24,6 +25,19 @@ class UI {
     static constexpr float ToolIconSize = 24.0f;
     static constexpr int BrushSizeMin = 1;
     static constexpr int BrushSizeMax = 50;
+    static constexpr float ColorFieldWidth = 200.0f;
+    static constexpr float SizeSliderWidth = 160.0f;
+    static constexpr float SidePanelMinWidth = 200.0f;
+    static constexpr float CanvasMinWidth = 200.0f;
+    static constexpr float SplitterWidth = 6.0f;
+    static constexpr ImVec2 StatusBarPadding = ImVec2(8.0f, 4.0f);
+    static constexpr ImGuiWindowFlags PanelFlags = ImGuiWindowFlags_NoMove
+                                                 | ImGuiWindowFlags_NoResize
+                                                 | ImGuiWindowFlags_NoCollapse
+                                                 | ImGuiWindowFlags_NoTitleBar
+                                                 | ImGuiWindowFlags_NoBringToFrontOnFocus
+                                                 | ImGuiWindowFlags_NoScrollbar
+                                                 | ImGuiWindowFlags_NoScrollWithMouse;
 
     GLFWwindow* Window = nullptr;
     bool ShouldClose = false;
@@ -32,9 +46,9 @@ class UI {
     std::unique_ptr<IconLibrary> Icons;
 
     char ExportPathBuffer[256] = "output.png";
-    std::string ExportStatus;
+    std::string StatusMessage;
+    float SidePanelWidth = 260.0f;
 
-    std::string FilterStatus;
     int FilterBrightness = 0;
     int FilterContrast = 0;
     bool OpenBrightnessPopup = false;
@@ -74,15 +88,20 @@ class UI {
     uint8_t NormalizeColor(int value);
     void LoadIcons();
     void HandleShortcuts();
+    float ToolbarRowHeight() const;
 
 public:
     UI(const std::string& imagePath);
     ~UI();
 
     void DrawFrame();
+    void DrawWorkspace();
+    void DrawCanvas();
     void UpdateCanvasMouseInput();
     void DrawLayerPanel();
+    void DrawExportPanel();
     void DrawToolbar();
+    void DrawStatusBar();
     void DrawMenuBar();
 
     void Undo();
