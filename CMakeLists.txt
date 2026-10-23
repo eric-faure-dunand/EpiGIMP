@@ -57,6 +57,7 @@ target_include_directories(EpiGIMP
         project/include/Widgets
         project/include/Theme
         project/include/Palette
+        project/include/History
 )
 
 target_compile_definitions(EpiGIMP

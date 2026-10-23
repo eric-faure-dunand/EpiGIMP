@@ -37,6 +37,7 @@ UI::UI(const std::string& imagePath) {
 
     MyDocument = std::make_unique<Document>(1, 1);
     MyDocument->LoadBaseLayerFromFile(imagePath);
+    MyHistory = std::make_unique<History>(*MyDocument, HistoryDepth);
 
     MyCanvas = std::make_unique<Canvas>(MyDocument->getWidth(), MyDocument->getHeight());
     MyCanvas->UpdateTexture(MyDocument->Composite());
@@ -87,9 +88,9 @@ void UI::HandleShortcuts() {
     }
 
     if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_Z))
-        Undo();
+        MyHistory->Undo();
     if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_Y))
-        Redo();
+        MyHistory->Redo();
     if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiMod_Shift | ImGuiKey_A))
         HasSelection = false;
 
@@ -218,13 +219,8 @@ void UI::DrawCanvas() {
         } else {
             Layer* active = MyDocument->getActiveLayer();
             if (active) {
-                if (StrokeStarted && CurrentTool != ToolMode::Picker) {
+                if (StrokeStarted && CurrentTool != ToolMode::Picker)
                     SaveUndoSnapshot();
-                    UndoLayerIndex = MyDocument->getActiveLayerIndex();
-                    UndoBuffer = active->getBuffer();
-                    UndoAvailable = true;
-                    RedoAvailable = false;
-                }
                 if (EditingMask) {
                     if (CurrentTool == ToolMode::Brush) {
                         active->DrawMaskBrush(MousePixelX, MousePixelY, BrushSize, 255,
@@ -297,8 +293,11 @@ void UI::DrawLayerPanel() {
     }
     ImGui::SameLine();
     if (ImGui::Button("- Supprimer", ImVec2(buttonWidth, 0.0f))) {
-        if (MyDocument->getLayerCount() > 1)
-            MyDocument->RemoveLayer(MyDocument->getActiveLayerIndex());
+        if (MyDocument->getLayerCount() > 1) {
+            int index = MyDocument->getActiveLayerIndex();
+            MyDocument->RemoveLayer(index);
+            MyHistory->ForgetLayer(index);
+        }
     }
 
     for (int i = MyDocument->getLayerCount() - 1; i >= 0; i--) {
@@ -373,16 +372,16 @@ void UI::DrawToolbar() {
 
     Widgets::VerticalSeparator(groupHeight);
     Widgets::BeginRibbonGroup();
-    ImGui::BeginDisabled(!UndoAvailable);
+    ImGui::BeginDisabled(!MyHistory->canUndo());
     if (Widgets::IconButton("undo", Icons->Get("undo"), "Annuler", ToolIconSize))
-        Undo();
+        MyHistory->Undo();
     ImGui::EndDisabled();
     Widgets::RichTooltip("Annuler", "Ctrl+Z", "Annule la derniere modification.");
 
     ImGui::SameLine();
-    ImGui::BeginDisabled(!RedoAvailable);
+    ImGui::BeginDisabled(!MyHistory->canRedo());
     if (Widgets::IconButton("redo", Icons->Get("redo"), "Retablir", ToolIconSize))
-        Redo();
+        MyHistory->Redo();
     ImGui::EndDisabled();
     Widgets::RichTooltip("Retablir", "Ctrl+Y", "Retablit la derniere modification annulee.");
     Widgets::EndRibbonGroup("Historique", rowHeight);
@@ -488,48 +487,9 @@ void UI::DrawMenuBar() {
     }
 }
 
-void UI::Undo() {
-    if (!UndoAvailable)
-        return;
-
-    Layer& layer = MyDocument->getLayer(UndoLayerIndex);
-
-    RedoLayerIndex = UndoLayerIndex;
-    RedoBuffer = layer.getBuffer();
-    RedoMask = layer.getMask();
-    RedoAvailable = true;
-
-    layer.setBuffer(UndoBuffer);
-    layer.setMask(UndoMask);
-    UndoAvailable = false;
-}
-
-void UI::Redo() {
-    if (!RedoAvailable)
-        return;
-
-    Layer& layer = MyDocument->getLayer(RedoLayerIndex);
-
-    UndoLayerIndex = RedoLayerIndex;
-    UndoBuffer = layer.getBuffer();
-    UndoMask = layer.getMask();
-    UndoAvailable = true;
-
-    layer.setBuffer(RedoBuffer);
-    layer.setMask(RedoMask);
-    RedoAvailable = false;
-}
-
 void UI::SaveUndoSnapshot() {
-    Layer* active = MyDocument->getActiveLayer();
-    if (!active)
-        return;
-
-    UndoLayerIndex = MyDocument->getActiveLayerIndex();
-    UndoBuffer = active->getBuffer();
-    UndoMask = active->getMask();
-    UndoAvailable = true;
-    RedoAvailable = false;
+    if (MyDocument->getActiveLayer())
+        MyHistory->RecordPixels(MyDocument->getActiveLayerIndex());
 }
 
 }
