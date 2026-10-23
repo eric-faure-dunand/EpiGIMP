@@ -30,6 +30,8 @@ class UI {
     static constexpr std::size_t HistoryDepth = 15;
     static constexpr float ColorFieldWidth = 200.0f;
     static constexpr float SizeSliderWidth = 160.0f;
+    static constexpr float SwatchSize = 13.0f;
+    static constexpr int ColorHistorySize = 10;
     static constexpr float SidePanelMinWidth = 200.0f;
     static constexpr float CanvasMinWidth = 200.0f;
     static constexpr float SplitterWidth = 6.0f;
@@ -65,9 +67,11 @@ class UI {
 
     int BrushColor[3] = {0, 0, 0};
     Palette BasePalette = Palette::Base();
+    Palette ColorHistory = Palette::Empty(ColorHistorySize, ColorHistorySize);
     int BrushSize = 4;
     ToolMode CurrentTool = ToolMode::Brush;
     bool EditingMask = false;
+    bool PickingColor = false;
 
     int LayerCounter = 1;
 
@@ -85,6 +89,7 @@ class UI {
     void LoadIcons();
     void HandleShortcuts();
     float ToolbarRowHeight() const;
+    void RememberBrushColor();
 
 public:
     UI(const std::string& imagePath);

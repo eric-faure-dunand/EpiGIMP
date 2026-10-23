@@ -24,6 +24,31 @@ Palette Palette::Base() {
     return Palette(std::move(swatches), 10);
 }
 
+Palette Palette::Empty(int count, int columns) {
+    return Palette(std::vector<ColorSwatch>(count), columns);
+}
+
+bool Palette::contains(uint8_t r, uint8_t g, uint8_t b) const {
+    for (const ColorSwatch& swatch : Swatches) {
+        if (swatch.matches(r, g, b))
+            return true;
+    }
+    return false;
+}
+
+bool Palette::AddColor(uint8_t r, uint8_t g, uint8_t b) {
+    if (contains(r, g, b))
+        return false;
+
+    for (ColorSwatch& swatch : Swatches) {
+        if (!swatch.hasColor()) {
+            swatch.setColor(r, g, b);
+            return true;
+        }
+    }
+    return false;
+}
+
 bool Palette::Draw(const char* id, float swatchSize, float spacing, int (&target)[3]) const {
     bool changed = false;
 

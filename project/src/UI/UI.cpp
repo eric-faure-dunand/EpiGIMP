@@ -65,7 +65,18 @@ uint8_t UI::NormalizeColor(int value) {
 }
 
 float UI::ToolbarRowHeight() const {
-    return ToolIconSize + ImGui::GetStyle().FramePadding.y * 2.0f;
+    const ImGuiStyle& style = ImGui::GetStyle();
+    const int swatchRows = BasePalette.getRowCount() + ColorHistory.getRowCount();
+    const float paletteHeight = swatchRows * SwatchSize + (swatchRows - 1) * style.ItemSpacing.y;
+    return std::max(ToolIconSize + style.FramePadding.y * 2.0f, paletteHeight);
+}
+
+void UI::RememberBrushColor() {
+    uint8_t r = NormalizeColor(BrushColor[0]);
+    uint8_t g = NormalizeColor(BrushColor[1]);
+    uint8_t b = NormalizeColor(BrushColor[2]);
+    if (!BasePalette.contains(r, g, b))
+        ColorHistory.AddColor(r, g, b);
 }
 
 void UI::LoadIcons() {
@@ -245,10 +256,16 @@ void UI::DrawCanvas() {
                         BrushColor[0] = flat[idx + 0];
                         BrushColor[1] = flat[idx + 1];
                         BrushColor[2] = flat[idx + 2];
+                        PickingColor = true;
                     }
                 }
             }
         }
+    }
+
+    if (PickingColor && !ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
+        PickingColor = false;
+        RememberBrushColor();
     }
 }
 
@@ -340,8 +357,9 @@ void UI::DrawToolbar() {
     const float rowHeight = ToolbarRowHeight();
     const float groupHeight = rowHeight + style.ItemSpacing.y + ImGui::GetTextLineHeight();
     const float frameOffset = std::floor((rowHeight - ImGui::GetFrameHeight()) * 0.5f);
+    const float iconOffset = std::floor((rowHeight - ToolIconSize - style.FramePadding.y * 2.0f) * 0.5f);
 
-    Widgets::BeginRibbonGroup();
+    Widgets::BeginRibbonGroup(iconOffset);
     bool first = true;
     for (const ToolInfo& tool : GetTools()) {
         if (!first)
@@ -354,7 +372,7 @@ void UI::DrawToolbar() {
     Widgets::EndRibbonGroup("Outils", rowHeight);
 
     Widgets::VerticalSeparator(groupHeight);
-    Widgets::BeginRibbonGroup();
+    Widgets::BeginRibbonGroup(iconOffset);
     if (Widgets::IconButton("mask", Icons->Get("mask"), "Masque", ToolIconSize, EditingMask))
         EditingMask = !EditingMask;
     Widgets::RichTooltip(EditingMask ? "Edition du masque : activee" : "Edition du masque : desactivee", nullptr,
@@ -371,7 +389,7 @@ void UI::DrawToolbar() {
     Widgets::EndRibbonGroup("Masque", rowHeight);
 
     Widgets::VerticalSeparator(groupHeight);
-    Widgets::BeginRibbonGroup();
+    Widgets::BeginRibbonGroup(iconOffset);
     ImGui::BeginDisabled(!MyHistory->canUndo());
     if (Widgets::IconButton("undo", Icons->Get("undo"), "Annuler", ToolIconSize))
         MyHistory->Undo();
@@ -394,13 +412,14 @@ void UI::DrawToolbar() {
         for (int i = 0; i < 3; i++)
             BrushColor[i] = NormalizeColor(static_cast<int>(color[i] * 255.0f + 0.5f));
     }
+    if (ImGui::IsItemDeactivatedAfterEdit())
+        RememberBrushColor();
     Widgets::EndRibbonGroup("Couleur", rowHeight);
 
     Widgets::VerticalSeparator(groupHeight);
     Widgets::BeginRibbonGroup();
-    const float swatchSpacing = style.ItemSpacing.y;
-    const float swatchSize = std::floor((rowHeight - swatchSpacing) * 0.5f);
-    BasePalette.Draw("base_palette", swatchSize, swatchSpacing, BrushColor);
+    BasePalette.Draw("base_palette", SwatchSize, style.ItemSpacing.y, BrushColor);
+    ColorHistory.Draw("color_history", SwatchSize, style.ItemSpacing.y, BrushColor);
     Widgets::EndRibbonGroup("Palette", rowHeight);
 
     Widgets::VerticalSeparator(groupHeight);

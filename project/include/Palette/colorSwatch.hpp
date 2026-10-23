@@ -19,6 +19,7 @@ public:
     bool Draw(const char* id, float size, int (&target)[3]) const;
 
     bool hasColor() const {return Color.has_value();};
+    bool matches(uint8_t r, uint8_t g, uint8_t b) const {return Color == std::array<uint8_t, 3>{r, g, b};};
     void setColor(uint8_t r, uint8_t g, uint8_t b) {Color = std::array<uint8_t, 3>{r, g, b};};
     void clear() {Color.reset();};
 };
