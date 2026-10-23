@@ -16,6 +16,7 @@
     #include "filter.hpp"
     #include "history.hpp"
     #include "iconLibrary.hpp"
+    #include "palette.hpp"
     #include "theme.hpp"
     #include "tool.hpp"
     #include "widgets.hpp"
@@ -63,6 +64,7 @@ class UI {
     int MousePixelY = 0;
 
     int BrushColor[3] = {0, 0, 0};
+    Palette BasePalette = Palette::Base();
     int BrushSize = 4;
     ToolMode CurrentTool = ToolMode::Brush;
     bool EditingMask = false;
