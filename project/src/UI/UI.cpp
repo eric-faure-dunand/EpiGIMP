@@ -398,6 +398,13 @@ void UI::DrawToolbar() {
     Widgets::EndRibbonGroup("Couleur", rowHeight);
 
     Widgets::VerticalSeparator(groupHeight);
+    Widgets::BeginRibbonGroup();
+    const float swatchSpacing = style.ItemSpacing.y;
+    const float swatchSize = std::floor((rowHeight - swatchSpacing) * 0.5f);
+    BasePalette.Draw("base_palette", swatchSize, swatchSpacing, BrushColor);
+    Widgets::EndRibbonGroup("Palette", rowHeight);
+
+    Widgets::VerticalSeparator(groupHeight);
     Widgets::BeginRibbonGroup(frameOffset);
     ImGui::BeginDisabled(!current.UsesSize);
     ImGui::SetNextItemWidth(SizeSliderWidth);
