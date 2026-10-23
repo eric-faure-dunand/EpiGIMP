@@ -14,6 +14,7 @@
     #include "canvas.hpp"
     #include "document.hpp"
     #include "filter.hpp"
+    #include "history.hpp"
     #include "iconLibrary.hpp"
     #include "theme.hpp"
     #include "tool.hpp"
@@ -25,6 +26,7 @@ class UI {
     static constexpr float ToolIconSize = 24.0f;
     static constexpr int BrushSizeMin = 1;
     static constexpr int BrushSizeMax = 50;
+    static constexpr std::size_t HistoryDepth = 15;
     static constexpr float ColorFieldWidth = 200.0f;
     static constexpr float SizeSliderWidth = 160.0f;
     static constexpr float SidePanelMinWidth = 200.0f;
@@ -67,15 +69,7 @@ class UI {
 
     int LayerCounter = 1;
 
-    int UndoLayerIndex = -1;
-    std::vector<uint8_t> UndoBuffer;
-    std::vector<uint8_t> UndoMask;
-    bool UndoAvailable = false;
-
-    int RedoLayerIndex = -1;
-    std::vector<uint8_t> RedoBuffer;
-    std::vector<uint8_t> RedoMask;
-    bool RedoAvailable = false;
+    std::unique_ptr<History> MyHistory;
 
     bool HasSelection = false;
     int SelectionStartX = 0;
@@ -104,8 +98,6 @@ public:
     void DrawStatusBar();
     void DrawMenuBar();
 
-    void Undo();
-    void Redo();
     void SaveUndoSnapshot();
 
     bool open() {return !ShouldClose;};

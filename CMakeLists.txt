@@ -56,6 +56,7 @@ target_include_directories(EpiGIMP
         project/include/Tool
         project/include/Widgets
         project/include/Theme
+        project/include/History
 )
 
 target_compile_definitions(EpiGIMP
