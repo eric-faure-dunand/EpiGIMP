@@ -67,6 +67,10 @@ class UI {
     int LastPixelX = 0;
     int LastPixelY = 0;
 
+    bool ResizingCanvas = false;
+    int PreviewWidth = 0;
+    int PreviewHeight = 0;
+
     int BrushColor[3] = {0, 0, 0};
     Palette BasePalette = Palette::Base();
     Palette ColorHistory = Palette::Empty(ColorHistorySize, ColorHistorySize);
@@ -93,6 +97,10 @@ class UI {
     void HandleShortcuts();
     float ToolbarRowHeight() const;
     void RememberBrushColor();
+    void UpdateResizeHandles(const ImVec2& origin);
+    void DrawResizeOverlay(const ImVec2& origin);
+    void ResizeCanvas(int width, int height);
+    void SyncCanvasSize();
 
 public:
     UI(const std::string& imagePath);

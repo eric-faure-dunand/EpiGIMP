@@ -7,7 +7,7 @@ Document::Document(int width, int height) : Width(width), Height(height) {
 }
 
 void Document::LoadBaseLayerFromFile(const std::string& path) {
-    auto layer = std::make_unique<Layer>(1, 1, "Background");
+    auto layer = std::make_unique<Layer>(1, 1, BackgroundName);
     layer->LoadFromFile(path);
 
     Width = layer->getWidth();
@@ -36,6 +36,14 @@ void Document::RemoveLayer(int index) {
     }
     if (ActiveLayerIndex >= static_cast<int>(Layers.size()))
         ActiveLayerIndex = static_cast<int>(Layers.size()) - 1;
+}
+
+void Document::Resize(int width, int height) {
+    for (const auto& layerPtr : Layers)
+        layerPtr->Resize(width, height, layerPtr->getName() == BackgroundName);
+
+    Width = width;
+    Height = height;
 }
 
 std::vector<uint8_t> Document::Composite() const {

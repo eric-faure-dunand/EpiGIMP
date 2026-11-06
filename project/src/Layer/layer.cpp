@@ -1,5 +1,6 @@
 #include "layer.hpp"
 
+#include <algorithm>
 #include <cstdlib>
 
 namespace gimp {
@@ -131,6 +132,25 @@ void Layer::LoadFromFile(const std::string& path) {
     stbi_image_free(data);
 
     Mask.assign(static_cast<size_t>(Width) * Height, 255);   // re-init masque a la taille de la nouvelle image
+}
+
+void Layer::Resize(int width, int height, bool fillWhite) {
+    std::vector<uint8_t> buffer(static_cast<size_t>(width) * height * 4, fillWhite ? 255 : 0);
+    std::vector<uint8_t> mask(static_cast<size_t>(width) * height, 255);
+
+    const int copyWidth = std::min(Width, width);
+    const int copyHeight = std::min(Height, height);
+    for (int y = 0; y < copyHeight; y++) {
+        std::copy_n(Buffer.begin() + static_cast<size_t>(y) * Width * 4, static_cast<size_t>(copyWidth) * 4,
+            buffer.begin() + static_cast<size_t>(y) * width * 4);
+        std::copy_n(Mask.begin() + static_cast<size_t>(y) * Width, copyWidth,
+            mask.begin() + static_cast<size_t>(y) * width);
+    }
+
+    Width = width;
+    Height = height;
+    Buffer = std::move(buffer);
+    Mask = std::move(mask);
 }
 
 }
