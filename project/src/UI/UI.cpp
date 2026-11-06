@@ -86,6 +86,8 @@ void UI::LoadIcons() {
     Icons->Load("deselect", "deselect.png");
     Icons->Load("undo", "undo.png");
     Icons->Load("redo", "redo.png");
+    Icons->Load("visibility", "visibility.png");
+    Icons->Load("visibility_off", "visibility_off.png");
 }
 
 void UI::HandleShortcuts() {
@@ -325,9 +327,11 @@ void UI::DrawLayerPanel() {
         Layer& layer = MyDocument->getLayer(i);
         ImGui::PushID(i);
 
-        bool visible = layer.isVisible();
-        if (ImGui::Checkbox("##visible", &visible))
-            layer.setVisible(visible);
+        const bool visible = layer.isVisible();
+        if (Widgets::IconButton("visible", Icons->Get(visible ? "visibility" : "visibility_off"),
+                visible ? "Visible" : "Cache", ImGui::GetTextLineHeight()))
+            layer.setVisible(!visible);
+        Widgets::RichTooltip(visible ? "Masquer le calque" : "Afficher le calque");
 
         ImGui::SameLine();
 
