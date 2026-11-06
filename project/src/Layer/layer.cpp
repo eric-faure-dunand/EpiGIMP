@@ -58,6 +58,37 @@ void StampHighlighter(int centerX, int centerY, int size, bool hasClip,
     }
 }
 
+int GrainAt(int x, int y) {
+    uint32_t value = static_cast<uint32_t>(x) * 374761393u + static_cast<uint32_t>(y) * 668265263u;
+    value = (value ^ (value >> 13)) * 1274126177u;
+    value ^= value >> 16;
+    return static_cast<int>(value % 100);
+}
+
+template <typename Plot>
+void StampPencil(int centerX, int centerY, int radius, int density, bool hasClip,
+    int clipMinX, int clipMinY, int clipMaxX, int clipMaxY, Plot plot) {
+    if (radius < 1)
+        radius = 1;
+
+    int rSquared = radius * radius;
+
+    for (int y = centerY - radius; y <= centerY + radius; y++) {
+        if (hasClip && (y < clipMinY || y > clipMaxY))
+            continue;
+
+        for (int x = centerX - radius; x <= centerX + radius; x++) {
+            if (hasClip && (x < clipMinX || x > clipMaxX))
+                continue;
+
+            int dx = x - centerX;
+            int dy = y - centerY;
+            if (dx * dx + dy * dy <= rSquared && GrainAt(x, y) < density)
+                plot(x, y);
+        }
+    }
+}
+
 }
 
 Layer::Layer(int width, int height, const std::string& name) : Width(width), Height(height), Name(name) {
@@ -114,6 +145,14 @@ void Layer::DrawHighlighterLine(int fromX, int fromY, int toX, int toY, int size
     });
 }
 
+void Layer::DrawPencilLine(int fromX, int fromY, int toX, int toY, int radius, int density, uint8_t r, uint8_t g, uint8_t b, uint8_t a,
+    bool hasClip, int clipMinX, int clipMinY, int clipMaxX, int clipMaxY) {
+    WalkLine(fromX, fromY, toX, toY, [&](int x, int y) {
+        StampPencil(x, y, radius, density, hasClip, clipMinX, clipMinY, clipMaxX, clipMaxY,
+            [&](int pixelX, int pixelY) { SetPixel(pixelX, pixelY, r, g, b, a); });
+    });
+}
+
 void Layer::SetMaskPixel(int x, int y, uint8_t value) {
     if (x < 0 || y < 0 || x >= Width || y >= Height)
         return;
@@ -155,6 +194,14 @@ void Layer::DrawMaskHighlighterLine(int fromX, int fromY, int toX, int toY, int 
     bool hasClip, int clipMinX, int clipMinY, int clipMaxX, int clipMaxY) {
     WalkLine(fromX, fromY, toX, toY, [&](int x, int y) {
         StampHighlighter(x, y, size, hasClip, clipMinX, clipMinY, clipMaxX, clipMaxY,
+            [&](int pixelX, int pixelY) { SetMaskPixel(pixelX, pixelY, value); });
+    });
+}
+
+void Layer::DrawMaskPencilLine(int fromX, int fromY, int toX, int toY, int radius, int density, uint8_t value,
+    bool hasClip, int clipMinX, int clipMinY, int clipMaxX, int clipMaxY) {
+    WalkLine(fromX, fromY, toX, toY, [&](int x, int y) {
+        StampPencil(x, y, radius, density, hasClip, clipMinX, clipMinY, clipMaxX, clipMaxY,
             [&](int pixelX, int pixelY) { SetMaskPixel(pixelX, pixelY, value); });
     });
 }
