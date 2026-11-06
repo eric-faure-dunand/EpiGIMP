@@ -35,9 +35,11 @@ public:
         bool hasClip = false, int clipMinX = 0, int clipMinY = 0, int clipMaxX = 0, int clipMaxY = 0);
 
     void LoadFromFile(const std::string& path);
+    void Resize(int width, int height, bool fillWhite);
 
     int getWidth() const {return Width;};
     int getHeight() const {return Height;};
+    void setSize(int width, int height) {Width = width; Height = height;};
     bool isVisible() const {return Visible;};
     void setVisible(bool visible) {Visible = visible;};
     const std::string& getName() const {return Name;};

@@ -16,6 +16,8 @@
 namespace gimp {
 
 class Document {
+    static constexpr const char* BackgroundName = "Background";
+
     int Width;
     int Height;
     std::vector<std::unique_ptr<Layer>> Layers;
@@ -29,6 +31,7 @@ public:
 
     Layer& AddLayer(const std::string& name);
     void RemoveLayer(int index);
+    void Resize(int width, int height);
 
     std::vector<uint8_t> Composite() const;
 
@@ -41,6 +44,7 @@ public:
 
     int getWidth() const {return Width;};
     int getHeight() const {return Height;};
+    void setSize(int width, int height) {Width = width; Height = height;};
 };
 
 }
