@@ -9,6 +9,7 @@ namespace gimp {
 
 enum class ToolMode {
     Brush,
+    Highlighter,
     Eraser,
     Picker,
     Selection
@@ -24,7 +25,7 @@ struct ToolInfo {
     bool UsesSize;
 };
 
-const std::array<ToolInfo, 4>& GetTools();
+const std::array<ToolInfo, 5>& GetTools();
 const ToolInfo& GetToolInfo(ToolMode mode);
 
 }

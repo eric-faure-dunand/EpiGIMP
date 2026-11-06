@@ -12,6 +12,7 @@
 | `undo.png` | Material Icons — `png/content/undo` (48dp) | Google | [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0) |
 | `redo.png` | Material Icons — `png/content/redo` (48dp) | Google | [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0) |
 | `deselect.png` | Material Icons — `png/content/deselect` (48dp) | Google | [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0) |
+| `highlighter.png` | Material Icons — `png/editor/border_color` (48dp) | Google | [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0) |
 | `visibility.png` | Material Icons — `png/action/visibility` (48dp) | Google | [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0) |
 | `visibility_off.png` | Material Icons — `png/action/visibility_off` (48dp) | Google | [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0) |
 

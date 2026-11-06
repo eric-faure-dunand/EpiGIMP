@@ -2,10 +2,13 @@
 
 namespace gimp {
 
-const std::array<ToolInfo, 4>& GetTools() {
-    static const std::array<ToolInfo, 4> tools = {{
+const std::array<ToolInfo, 5>& GetTools() {
+    static const std::array<ToolInfo, 5> tools = {{
         {ToolMode::Brush, "brush", "Pinceau", "P", ImGuiKey_P,
             "Peint avec la couleur courante sur le calque actif. "
+            "En mode masque : rend la zone peinte visible.", true},
+        {ToolMode::Highlighter, "highlighter", "Stabilo", "H", ImGuiKey_H,
+            "Peint avec la couleur courante en parallelogramme : largeur double de la taille, hauteur egale a la taille. "
             "En mode masque : rend la zone peinte visible.", true},
         {ToolMode::Eraser, "eraser", "Gomme", "Shift+E", ImGuiMod_Shift | ImGuiKey_E,
             "Efface les pixels du calque actif (transparence). "

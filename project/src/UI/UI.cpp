@@ -357,6 +357,9 @@ void UI::DrawCanvas() {
                     if (CurrentTool == ToolMode::Brush) {
                         active->DrawMaskBrushLine(fromX, fromY, MousePixelX, MousePixelY, BrushSize, 255,
                             HasSelection, SelectionMinX, SelectionMinY, SelectionMaxX, SelectionMaxY);
+                    } else if (CurrentTool == ToolMode::Highlighter) {
+                        active->DrawMaskHighlighterLine(fromX, fromY, MousePixelX, MousePixelY, BrushSize, 255,
+                            HasSelection, SelectionMinX, SelectionMinY, SelectionMaxX, SelectionMaxY);
                     } else if (CurrentTool == ToolMode::Eraser) {
                         active->DrawMaskBrushLine(fromX, fromY, MousePixelX, MousePixelY, BrushSize, 0,
                             HasSelection, SelectionMinX, SelectionMinY, SelectionMaxX, SelectionMaxY);
@@ -367,6 +370,12 @@ void UI::DrawCanvas() {
                         uint8_t g = NormalizeColor(BrushColor[1]);
                         uint8_t b = NormalizeColor(BrushColor[2]);
                         active->DrawBrushLine(fromX, fromY, MousePixelX, MousePixelY, BrushSize, r, g, b, 255,
+                            HasSelection, SelectionMinX, SelectionMinY, SelectionMaxX, SelectionMaxY);
+                    } else if (CurrentTool == ToolMode::Highlighter) {
+                        uint8_t r = NormalizeColor(BrushColor[0]);
+                        uint8_t g = NormalizeColor(BrushColor[1]);
+                        uint8_t b = NormalizeColor(BrushColor[2]);
+                        active->DrawHighlighterLine(fromX, fromY, MousePixelX, MousePixelY, BrushSize, r, g, b, 255,
                             HasSelection, SelectionMinX, SelectionMinY, SelectionMaxX, SelectionMaxY);
                     } else if (CurrentTool == ToolMode::Eraser) {
                         active->DrawBrushLine(fromX, fromY, MousePixelX, MousePixelY, BrushSize, 0, 0, 0, 0,
@@ -558,7 +567,7 @@ void UI::DrawToolbar() {
     ImGui::SliderInt("##taille", &BrushSize, BrushSizeMin, BrushSizeMax, "%d px", ImGuiSliderFlags_AlwaysClamp);
     ImGui::EndDisabled();
     Widgets::RichTooltip("Taille du pinceau", "[ / ]",
-        current.UsesSize ? "Rayon du pinceau et de la gomme, en pixels. Aussi : - / + du pave numerique.": "Sans effet sur l'outil actif.");
+        current.UsesSize ? "Rayon du pinceau et de la gomme, hauteur du stabilo (largeur double), en pixels. Aussi : - / + du pave numerique.": "Sans effet sur l'outil actif.");
     Widgets::EndRibbonGroup("Taille", rowHeight);
 }
 
