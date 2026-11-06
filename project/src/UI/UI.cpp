@@ -5,6 +5,33 @@
 
 namespace gimp {
 
+namespace {
+
+constexpr float ResizeHandleSize = 8.0f;
+constexpr float ResizeHandleGap = 2.0f;
+
+struct ResizeHandle {
+    const char* Id;
+    bool ResizeWidth;
+    bool ResizeHeight;
+    ImGuiMouseCursor Cursor;
+};
+
+constexpr ResizeHandle ResizeHandles[] = {
+    {"##resize_right", true, false, ImGuiMouseCursor_ResizeEW},
+    {"##resize_bottom", false, true, ImGuiMouseCursor_ResizeNS},
+    {"##resize_corner", true, true, ImGuiMouseCursor_ResizeNWSE},
+};
+
+ImVec2 ResizeHandleMin(const ImVec2& origin, float width, float height, const ResizeHandle& handle) {
+    const float half = ResizeHandleSize * 0.5f;
+    const float centerX = handle.ResizeWidth ? width + half + ResizeHandleGap : width * 0.5f;
+    const float centerY = handle.ResizeHeight ? height + half + ResizeHandleGap : height * 0.5f;
+    return ImVec2(std::floor(origin.x + centerX - half), std::floor(origin.y + centerY - half));
+}
+
+}
+
 UI::UI(const std::string& imagePath) {
     if (!glfwInit())
         throw Error("Impossible d'initialiser GLFW");
@@ -164,6 +191,7 @@ void UI::DrawFrame() {
 
     HandleShortcuts();
 
+    SyncCanvasSize();
     MyCanvas->UpdateTexture(MyDocument->Composite());
 
     ImGui::Render();
@@ -201,11 +229,100 @@ void UI::DrawWorkspace() {
     ImGui::EndChild();
 }
 
+void UI::SyncCanvasSize() {
+    if (MyCanvas->getWidth() == MyDocument->getWidth() && MyCanvas->getHeight() == MyDocument->getHeight())
+        return;
+
+    MyCanvas->Resize(MyDocument->getWidth(), MyDocument->getHeight());
+    MyCanvas->UpdateTexture(MyDocument->Composite());
+    HasSelection = false;
+}
+
+void UI::ResizeCanvas(int width, int height) {
+    MyHistory->RecordResize();
+    MyDocument->Resize(width, height);
+    SyncCanvasSize();
+}
+
+void UI::UpdateResizeHandles(const ImVec2& origin) {
+    const int width = MyDocument->getWidth();
+    const int height = MyDocument->getHeight();
+    bool active = false;
+
+    for (const ResizeHandle& handle : ResizeHandles) {
+        ImGui::SetCursorScreenPos(ResizeHandleMin(origin, static_cast<float>(width), static_cast<float>(height), handle));
+        ImGui::InvisibleButton(handle.Id, ImVec2(ResizeHandleSize, ResizeHandleSize));
+
+        if (ImGui::IsItemHovered() || ImGui::IsItemActive())
+            ImGui::SetMouseCursor(handle.Cursor);
+        if (ImGui::IsItemActivated()) {
+            PreviewWidth = width;
+            PreviewHeight = height;
+        }
+        if (ImGui::IsItemActive()) {
+            const ImVec2 drag = ImGui::GetMouseDragDelta(ImGuiMouseButton_Left, 0.0f);
+            if (handle.ResizeWidth)
+                PreviewWidth = std::max(1, width + static_cast<int>(drag.x));
+            if (handle.ResizeHeight)
+                PreviewHeight = std::max(1, height + static_cast<int>(drag.y));
+            active = true;
+        }
+        if (ImGui::IsItemDeactivated() && (PreviewWidth != width || PreviewHeight != height))
+            ResizeCanvas(PreviewWidth, PreviewHeight);
+    }
+    ResizingCanvas = active;
+}
+
+void UI::DrawResizeOverlay(const ImVec2& origin) {
+    ImDrawList* drawList = ImGui::GetWindowDrawList();
+    const float width = static_cast<float>(MyDocument->getWidth());
+    const float height = static_cast<float>(MyDocument->getHeight());
+    float shownWidth = width;
+    float shownHeight = height;
+
+    if (ResizingCanvas) {
+        const float newWidth = static_cast<float>(PreviewWidth);
+        const float newHeight = static_cast<float>(PreviewHeight);
+        const float sharedWidth = std::min(width, newWidth);
+        const ImU32 white = IM_COL32(255, 255, 255, 255);
+        const ImU32 background = ImGui::ColorConvertFloat4ToU32(Theme::CanvasBg);
+        auto fill = [&](float minX, float minY, float maxX, float maxY, ImU32 color) {
+            drawList->AddRectFilled(ImVec2(origin.x + minX, origin.y + minY), ImVec2(origin.x + maxX, origin.y + maxY), color);
+        };
+
+        if (newWidth > width)
+            fill(width, 0.0f, newWidth, newHeight, white);
+        if (newHeight > height)
+            fill(0.0f, height, sharedWidth, newHeight, white);
+        if (newWidth < width)
+            fill(newWidth, 0.0f, width, height, background);
+        if (newHeight < height)
+            fill(0.0f, newHeight, sharedWidth, height, background);
+        drawList->AddRect(origin, ImVec2(origin.x + newWidth, origin.y + newHeight), ImGui::GetColorU32(ImGuiCol_CheckMark));
+
+        shownWidth = newWidth;
+        shownHeight = newHeight;
+    }
+
+    for (const ResizeHandle& handle : ResizeHandles) {
+        const ImVec2 min = ResizeHandleMin(origin, shownWidth, shownHeight, handle);
+        drawList->AddRectFilled(min, ImVec2(min.x + ResizeHandleSize, min.y + ResizeHandleSize),
+            ImGui::GetColorU32(ImGuiCol_CheckMark));
+    }
+}
+
 void UI::DrawCanvas() {
+    SyncCanvasSize();
+
+    const ImVec2 origin = ImGui::GetCursorScreenPos();
+    UpdateResizeHandles(origin);
+    ImGui::SetCursorScreenPos(origin);
+
     ImGui::Image(
         (ImTextureID)(intptr_t)MyCanvas->getTextureId(),
         ImVec2((float)MyCanvas->getWidth(), (float)MyCanvas->getHeight())
     );
+    DrawResizeOverlay(origin);
 
     if (HasSelection) {
         ImVec2 imageOrigin = ImGui::GetItemRectMin();
