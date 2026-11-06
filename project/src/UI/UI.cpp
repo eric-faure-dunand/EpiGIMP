@@ -412,8 +412,13 @@ void UI::DrawToolbar() {
         for (int i = 0; i < 3; i++)
             BrushColor[i] = NormalizeColor(static_cast<int>(color[i] * 255.0f + 0.5f));
     }
-    if (ImGui::IsItemDeactivatedAfterEdit())
+    const bool colorEdited = ImGui::IsItemDeactivatedAfterEdit();
+    ImGui::PushID("##couleur");
+    const bool pickerOpen = ImGui::IsPopupOpen("picker");
+    ImGui::PopID();
+    if ((colorEdited && !pickerOpen) || (ColorPickerWasOpen && !pickerOpen))
         RememberBrushColor();
+    ColorPickerWasOpen = pickerOpen;
     Widgets::EndRibbonGroup("Couleur", rowHeight);
 
     Widgets::VerticalSeparator(groupHeight);
