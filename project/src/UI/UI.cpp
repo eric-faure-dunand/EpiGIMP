@@ -357,6 +357,12 @@ void UI::DrawCanvas() {
                     if (CurrentTool == ToolMode::Brush) {
                         active->DrawMaskBrushLine(fromX, fromY, MousePixelX, MousePixelY, BrushSize, 255,
                             HasSelection, SelectionMinX, SelectionMinY, SelectionMaxX, SelectionMaxY);
+                    } else if (CurrentTool == ToolMode::Highlighter) {
+                        active->DrawMaskHighlighterLine(fromX, fromY, MousePixelX, MousePixelY, BrushSize, 255,
+                            HasSelection, SelectionMinX, SelectionMinY, SelectionMaxX, SelectionMaxY);
+                    } else if (CurrentTool == ToolMode::Pencil) {
+                        active->DrawMaskPencilLine(fromX, fromY, MousePixelX, MousePixelY, BrushSize, GrainDensity, 255,
+                            HasSelection, SelectionMinX, SelectionMinY, SelectionMaxX, SelectionMaxY);
                     } else if (CurrentTool == ToolMode::Eraser) {
                         active->DrawMaskBrushLine(fromX, fromY, MousePixelX, MousePixelY, BrushSize, 0,
                             HasSelection, SelectionMinX, SelectionMinY, SelectionMaxX, SelectionMaxY);
@@ -367,6 +373,18 @@ void UI::DrawCanvas() {
                         uint8_t g = NormalizeColor(BrushColor[1]);
                         uint8_t b = NormalizeColor(BrushColor[2]);
                         active->DrawBrushLine(fromX, fromY, MousePixelX, MousePixelY, BrushSize, r, g, b, 255,
+                            HasSelection, SelectionMinX, SelectionMinY, SelectionMaxX, SelectionMaxY);
+                    } else if (CurrentTool == ToolMode::Highlighter) {
+                        uint8_t r = NormalizeColor(BrushColor[0]);
+                        uint8_t g = NormalizeColor(BrushColor[1]);
+                        uint8_t b = NormalizeColor(BrushColor[2]);
+                        active->DrawHighlighterLine(fromX, fromY, MousePixelX, MousePixelY, BrushSize, r, g, b, 255,
+                            HasSelection, SelectionMinX, SelectionMinY, SelectionMaxX, SelectionMaxY);
+                    } else if (CurrentTool == ToolMode::Pencil) {
+                        uint8_t r = NormalizeColor(BrushColor[0]);
+                        uint8_t g = NormalizeColor(BrushColor[1]);
+                        uint8_t b = NormalizeColor(BrushColor[2]);
+                        active->DrawPencilLine(fromX, fromY, MousePixelX, MousePixelY, BrushSize, GrainDensity, r, g, b, 255,
                             HasSelection, SelectionMinX, SelectionMinY, SelectionMaxX, SelectionMaxY);
                     } else if (CurrentTool == ToolMode::Eraser) {
                         active->DrawBrushLine(fromX, fromY, MousePixelX, MousePixelY, BrushSize, 0, 0, 0, 0,
@@ -558,8 +576,19 @@ void UI::DrawToolbar() {
     ImGui::SliderInt("##taille", &BrushSize, BrushSizeMin, BrushSizeMax, "%d px", ImGuiSliderFlags_AlwaysClamp);
     ImGui::EndDisabled();
     Widgets::RichTooltip("Taille du pinceau", "[ / ]",
-        current.UsesSize ? "Rayon du pinceau et de la gomme, en pixels. Aussi : - / + du pave numerique.": "Sans effet sur l'outil actif.");
+        current.UsesSize ? "Rayon du pinceau, de la gomme et du crayon, hauteur du stabilo (largeur double), en pixels. Aussi : - / + du pave numerique.": "Sans effet sur l'outil actif.");
     Widgets::EndRibbonGroup("Taille", rowHeight);
+
+    Widgets::VerticalSeparator(groupHeight);
+    Widgets::BeginRibbonGroup(frameOffset);
+    const bool pencil = CurrentTool == ToolMode::Pencil;
+    ImGui::BeginDisabled(!pencil);
+    ImGui::SetNextItemWidth(GrainSliderWidth);
+    ImGui::SliderInt("##grain", &GrainDensity, GrainDensityMin, GrainDensityMax, "%d %%", ImGuiSliderFlags_AlwaysClamp);
+    ImGui::EndDisabled();
+    Widgets::RichTooltip("Grain du crayon", nullptr,
+        pencil ? "Part des pixels peints par le crayon : 100 % peint tout, une valeur basse laisse plus de pixels non peints." : "Sans effet sur l'outil actif.");
+    Widgets::EndRibbonGroup("Grain", rowHeight);
 }
 
 void UI::DrawStatusBar() {

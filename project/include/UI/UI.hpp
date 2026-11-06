@@ -30,6 +30,9 @@ class UI {
     static constexpr std::size_t HistoryDepth = 15;
     static constexpr float ColorFieldWidth = 200.0f;
     static constexpr float SizeSliderWidth = 160.0f;
+    static constexpr int GrainDensityMin = 1;
+    static constexpr int GrainDensityMax = 100;
+    static constexpr float GrainSliderWidth = 120.0f;
     static constexpr float SwatchSize = 13.0f;
     static constexpr int ColorHistorySize = 10;
     static constexpr float SidePanelMinWidth = 200.0f;
@@ -75,6 +78,7 @@ class UI {
     Palette BasePalette = Palette::Base();
     Palette ColorHistory = Palette::Empty(ColorHistorySize, ColorHistorySize);
     int BrushSize = 4;
+    int GrainDensity = 50;
     ToolMode CurrentTool = ToolMode::Brush;
     bool EditingMask = false;
     bool PickingColor = false;

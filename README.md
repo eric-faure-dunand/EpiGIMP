@@ -22,6 +22,8 @@ On ouvre une image, on peint dessus sur plusieurs calques, on applique des filtr
 | Outil | Raccourci | Effet |
 |---|---|---|
 | Pinceau | `P` | Peint avec la couleur courante. En mode masque : rend la zone visible |
+| Stabilo | `H` | Peint en parallélogramme (largeur 2× la taille, hauteur = la taille). En mode masque : rend la zone visible |
+| Crayon | `C` | Peint en laissant des pixels non peints (grain fixe, densité réglée par le curseur *Grain*). En mode masque : rend la zone visible |
 | Gomme | `Shift+E` | Rend les pixels transparents. En mode masque : cache la zone |
 | Pipette | `O` | Reprend la couleur de l'image sous le curseur |
 | Sélection rectangulaire | `R` | Limite le pinceau et la gomme à l'intérieur du rectangle |
@@ -40,7 +42,7 @@ Chaque bouton de la barre d'outils affiche une infobulle avec son nom, son racco
 
 | Action | Raccourci |
 |---|---|
-| Pinceau / Gomme / Pipette / Sélection | `P` / `Shift+E` / `O` / `R` |
+| Pinceau / Stabilo / Crayon / Gomme / Pipette / Sélection | `P` / `H` / `C` / `Shift+E` / `O` / `R` |
 | Annuler | `Ctrl+Z` |
 | Rétablir | `Ctrl+Y` |
 | Désélectionner | `Ctrl+Shift+A` |
