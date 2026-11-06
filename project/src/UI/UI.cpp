@@ -384,8 +384,7 @@ void UI::DrawToolbar() {
         HasSelection = false;
     ImGui::EndDisabled();
     Widgets::RichTooltip("Deselectionner", "Ctrl+Shift+A",
-        HasSelection ? "Supprime la selection : les outils agissent de nouveau sur tout le calque."
-                     : "Aucune selection active.");
+        HasSelection ? "Supprime la selection : les outils agissent de nouveau sur tout le calque. : Aucune selection active.");
     Widgets::EndRibbonGroup("Masque", rowHeight);
 
     Widgets::VerticalSeparator(groupHeight);
@@ -434,8 +433,7 @@ void UI::DrawToolbar() {
     ImGui::SliderInt("##taille", &BrushSize, BrushSizeMin, BrushSizeMax, "%d px", ImGuiSliderFlags_AlwaysClamp);
     ImGui::EndDisabled();
     Widgets::RichTooltip("Taille du pinceau", "[ / ]",
-        current.UsesSize ? "Rayon du pinceau et de la gomme, en pixels. Aussi : - / + du pave numerique."
-                         : "Sans effet sur l'outil actif.");
+        current.UsesSize ? "Rayon du pinceau et de la gomme, en pixels. Aussi : - / + du pave numerique.": "Sans effet sur l'outil actif.");
     Widgets::EndRibbonGroup("Taille", rowHeight);
 }
 
