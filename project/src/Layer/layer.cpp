@@ -1,6 +1,39 @@
 #include "layer.hpp"
 
+#include <cstdlib>
+
 namespace gimp {
+
+namespace {
+
+template <typename Stamp>
+void WalkLine(int fromX, int fromY, int toX, int toY, Stamp stamp) {
+    int dx = std::abs(toX - fromX);
+    int dy = -std::abs(toY - fromY);
+    int stepX = fromX < toX ? 1 : -1;
+    int stepY = fromY < toY ? 1 : -1;
+    int error = dx + dy;
+    int x = fromX;
+    int y = fromY;
+
+    while (true) {
+        stamp(x, y);
+        if (x == toX && y == toY)
+            break;
+
+        int doubledError = 2 * error;
+        if (doubledError >= dy) {
+            error += dy;
+            x += stepX;
+        }
+        if (doubledError <= dx) {
+            error += dx;
+            y += stepY;
+        }
+    }
+}
+
+}
 
 Layer::Layer(int width, int height, const std::string& name) : Width(width), Height(height), Name(name) {
     Buffer.resize(static_cast<size_t>(Width) * Height * 4, 0);
@@ -41,6 +74,13 @@ void Layer::DrawBrush(int centerX, int centerY, int radius, uint8_t r, uint8_t g
     }
 }
 
+void Layer::DrawBrushLine(int fromX, int fromY, int toX, int toY, int radius, uint8_t r, uint8_t g, uint8_t b, uint8_t a,
+    bool hasClip, int clipMinX, int clipMinY, int clipMaxX, int clipMaxY) {
+    WalkLine(fromX, fromY, toX, toY, [&](int x, int y) {
+        DrawBrush(x, y, radius, r, g, b, a, hasClip, clipMinX, clipMinY, clipMaxX, clipMaxY);
+    });
+}
+
 void Layer::SetMaskPixel(int x, int y, uint8_t value) {
     if (x < 0 || y < 0 || x >= Width || y >= Height)
         return;
@@ -69,6 +109,13 @@ void Layer::DrawMaskBrush(int centerX, int centerY, int radius, uint8_t value,
                 SetMaskPixel(x, y, value);
         }
     }
+}
+
+void Layer::DrawMaskBrushLine(int fromX, int fromY, int toX, int toY, int radius, uint8_t value,
+    bool hasClip, int clipMinX, int clipMinY, int clipMaxX, int clipMaxY) {
+    WalkLine(fromX, fromY, toX, toY, [&](int x, int y) {
+        DrawMaskBrush(x, y, radius, value, hasClip, clipMinX, clipMinY, clipMaxX, clipMaxY);
+    });
 }
 
 void Layer::LoadFromFile(const std::string& path) {
