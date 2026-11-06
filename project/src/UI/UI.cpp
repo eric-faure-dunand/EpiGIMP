@@ -232,12 +232,14 @@ void UI::DrawCanvas() {
             if (active) {
                 if (StrokeStarted && CurrentTool != ToolMode::Picker)
                     SaveUndoSnapshot();
+                const int fromX = StrokeStarted ? MousePixelX : LastPixelX;
+                const int fromY = StrokeStarted ? MousePixelY : LastPixelY;
                 if (EditingMask) {
                     if (CurrentTool == ToolMode::Brush) {
-                        active->DrawMaskBrush(MousePixelX, MousePixelY, BrushSize, 255,
+                        active->DrawMaskBrushLine(fromX, fromY, MousePixelX, MousePixelY, BrushSize, 255,
                             HasSelection, SelectionMinX, SelectionMinY, SelectionMaxX, SelectionMaxY);
                     } else if (CurrentTool == ToolMode::Eraser) {
-                        active->DrawMaskBrush(MousePixelX, MousePixelY, BrushSize, 0,
+                        active->DrawMaskBrushLine(fromX, fromY, MousePixelX, MousePixelY, BrushSize, 0,
                             HasSelection, SelectionMinX, SelectionMinY, SelectionMaxX, SelectionMaxY);
                     }
                 } else {
@@ -245,10 +247,10 @@ void UI::DrawCanvas() {
                         uint8_t r = NormalizeColor(BrushColor[0]);
                         uint8_t g = NormalizeColor(BrushColor[1]);
                         uint8_t b = NormalizeColor(BrushColor[2]);
-                        active->DrawBrush(MousePixelX, MousePixelY, BrushSize, r, g, b, 255,
+                        active->DrawBrushLine(fromX, fromY, MousePixelX, MousePixelY, BrushSize, r, g, b, 255,
                             HasSelection, SelectionMinX, SelectionMinY, SelectionMaxX, SelectionMaxY);
                     } else if (CurrentTool == ToolMode::Eraser) {
-                        active->DrawBrush(MousePixelX, MousePixelY, BrushSize, 0, 0, 0, 0,
+                        active->DrawBrushLine(fromX, fromY, MousePixelX, MousePixelY, BrushSize, 0, 0, 0, 0,
                             HasSelection, SelectionMinX, SelectionMinY, SelectionMaxX, SelectionMaxY);
                     } else if (CurrentTool == ToolMode::Picker) {
                         std::vector<uint8_t> flat = MyDocument->Composite();
@@ -259,6 +261,8 @@ void UI::DrawCanvas() {
                         PickingColor = true;
                     }
                 }
+                LastPixelX = MousePixelX;
+                LastPixelY = MousePixelY;
             }
         }
     }
@@ -384,7 +388,7 @@ void UI::DrawToolbar() {
         HasSelection = false;
     ImGui::EndDisabled();
     Widgets::RichTooltip("Deselectionner", "Ctrl+Shift+A",
-        HasSelection ? "Supprime la selection : les outils agissent de nouveau sur tout le calque. : Aucune selection active.");
+        HasSelection ? "Supprime la selection : les outils agissent de nouveau sur tout le calque." : "Aucune selection active.");
     Widgets::EndRibbonGroup("Masque", rowHeight);
 
     Widgets::VerticalSeparator(groupHeight);

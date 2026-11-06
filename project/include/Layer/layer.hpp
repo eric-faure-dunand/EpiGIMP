@@ -25,8 +25,13 @@ public:
     void DrawBrush(int centerX, int centerY, int radius, uint8_t r, uint8_t g, uint8_t b, uint8_t a,
         bool hasClip = false, int clipMinX = 0, int clipMinY = 0, int clipMaxX = 0, int clipMaxY = 0);
 
+    void DrawBrushLine(int fromX, int fromY, int toX, int toY, int radius, uint8_t r, uint8_t g, uint8_t b, uint8_t a,
+        bool hasClip = false, int clipMinX = 0, int clipMinY = 0, int clipMaxX = 0, int clipMaxY = 0);
+
     void SetMaskPixel(int x, int y, uint8_t value);
     void DrawMaskBrush(int centerX, int centerY, int radius, uint8_t value,
+        bool hasClip = false, int clipMinX = 0, int clipMinY = 0, int clipMaxX = 0, int clipMaxY = 0);
+    void DrawMaskBrushLine(int fromX, int fromY, int toX, int toY, int radius, uint8_t value,
         bool hasClip = false, int clipMinX = 0, int clipMinY = 0, int clipMaxX = 0, int clipMaxY = 0);
 
     void LoadFromFile(const std::string& path);

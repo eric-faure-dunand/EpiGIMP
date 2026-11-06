@@ -64,6 +64,8 @@ class UI {
     bool MouseDragging = false;
     int MousePixelX = 0;
     int MousePixelY = 0;
+    int LastPixelX = 0;
+    int LastPixelY = 0;
 
     int BrushColor[3] = {0, 0, 0};
     Palette BasePalette = Palette::Base();
