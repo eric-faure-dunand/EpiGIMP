@@ -72,6 +72,7 @@ class UI {
     ToolMode CurrentTool = ToolMode::Brush;
     bool EditingMask = false;
     bool PickingColor = false;
+    bool ColorPickerWasOpen = false;
 
     int LayerCounter = 1;
 
